@@ -104,7 +104,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 def main() -> None:
     application = Application.builder().token(
-        "7530680667:AAFFJ6SxFOcji0z0Aug4xbNaPtzznJ-QSG8").build()
+        "#").build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
