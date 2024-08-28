@@ -1,7 +1,12 @@
 import logging
 import os
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, ConversationHandler, CallbackContext
+
+#  States
+
+master_id, players_count, system, setting, game_type, time, cost, experience, free_text = range(
+    9)
 
 # Включаем логирование
 logging.basicConfig(
@@ -12,94 +17,112 @@ logger = logging.getLogger(__name__)
 # Функция обработки команды /start
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    reply_keyboard = [['Старт']]
+async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
-        'Привет! Добро пожаловать в Бот RoC. Нажмите кнопку "Старт", чтобы продолжить.',
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, resize_keyboard=True
-        ),
+        'Привет Мастер! Как тебя зовут?',
     )
+    return master_id
 
 
-# Обработчик кнопки "Старт"
-
-async def handle_start_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logging.info(update.message.text)
-    if update.message.text == 'Старт':
-        # Показываем вопрос и варианты ответа
-        question_keyboard = [
-            ['Я игрок, ищу something', 'Я мастер, ищу игроков']]
-        await update.message.reply_text(
-            'Выберите пожалуйста вариант:',
-            reply_markup=ReplyKeyboardMarkup(
-                question_keyboard, one_time_keyboard=True, resize_keyboard=True
-            ),
-        )
-
-# Обработчик выбора вариантов ответа
+async def get_master_id(update: Update, context: CallbackContext) -> None:
+    context.user_data["master_id"] = update.message.text
+    await update.message.reply_text(
+        'Сколько игроков тебе нужно?',
+    )
+    return players_count
 
 
-async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-
-    if update.message.text in ['Я игрок, ищу something', 'Я мастер, ищу игроков']:
-        await update.message.reply_text(f'Вы выбрали {update.message.text}. Спасибо за ваш ответ!')
-    if update.message.text == 'Я игрок, ищу something':
-        question_keyboard = [
-            ['RPG', 'BoardGames']]
-        await update.message.reply_text(
-            'Выберите пожалуйста вариант:',
-            reply_markup=ReplyKeyboardMarkup(
-                question_keyboard, one_time_keyboard=True, resize_keyboard=True
-            ),
-        )
-    if update.message.text == 'RPG':
-        question_keyboard = [
-            ['RPG', 'BoardGames']]
-        await update.message.reply_text(
-            'Выберите пожалуйста вариант:',
-            reply_markup=ReplyKeyboardMarkup(
-                question_keyboard, one_time_keyboard=True, resize_keyboard=True
-            ),
-        )
+async def get_players_count(update: Update, context: CallbackContext) -> None:
+    context.user_data["players_count"] = update.message.text
+    await update.message.reply_text(
+        'Какая у тебя система?',
+    )
+    return system
 
 
-# Обработчик выбора вариантов ответа мастера
-
-async def handle_answer_master(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.message.text == 'Я мастер, ищу игроков':
-        question_keyboard = [
-            ['RPG', 'BoardGames']]
-        await update.message.reply_text(
-            'Выберите пожалуйста вариант:',
-            reply_markup=ReplyKeyboardMarkup(
-                question_keyboard, one_time_keyboard=True, resize_keyboard=True
-            ),
-        )
+async def get_system(update: Update, context: CallbackContext) -> None:
+    context.user_data["system"] = update.message.text
+    await update.message.reply_text(
+        'Какой у тебя сеттинг?',
+    )
+    return setting
 
 
-# async def handle_player_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def get_setting(update: Update, context: CallbackContext) -> None:
+    context.user_data["setting"] = update.message.text
+    await update.message.reply_text(
+        'Какой у тебя вид игры?',
+    )
+    return game_type
 
 
-# async def handle_player_next_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def get_game_type(update: Update, context: CallbackContext) -> None:
+    context.user_data["game_type"] = update.message.text
+    await update.message.reply_text(
+        'Выбери время и место',
+    )
+    return time
+
+
+async def get_time(update: Update, context: CallbackContext) -> None:
+    context.user_data["time"] = update.message.text
+    await update.message.reply_text(
+        'Выбери стоимость своей игры',
+    )
+    return cost
+
+
+async def get_cost(update: Update, context: CallbackContext) -> None:
+    context.user_data["cost"] = update.message.text
+    await update.message.reply_text(
+        'Важен ли тебе опыт игроков',
+    )
+    return experience
+
+
+async def get_experience(update: Update, context: CallbackContext) -> None:
+    context.user_data["experience"] = update.message.text
+    await update.message.reply_text(
+        'Если есть что сказать скажи сейчас или замолчи навсегда',
+    )
+    return free_text
+
+
+async def get_free_text(update: Update, context: CallbackContext) -> None:
+    context.user_data["free_text"] = update.message.text
+    await update.message.reply_text(
+        'Спасибо!',
+    )
+    return ConversationHandler.END
+
+
+def cancel(update: Update, context: CallbackContext) -> int:
+    """End the conversation."""
+    update.message.reply_text('Bye! Hope to talk to you again soon.')
+    return ConversationHandler.END
 
 
 def main() -> None:
     application = Application.builder().token(
-        os.environ.get("BOT_TOKEN")).build()
+        "7530680667:AAFFJ6SxFOcji0z0Aug4xbNaPtzznJ-QSG8").build()
 
-    # Регистрируем обработчик команды /start
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(
-        filters.Regex('^Старт$'), handle_start_button))
-    application.add_handler(MessageHandler(
-        filters.TEXT & ~filters.COMMAND, handle_answer))
-    # application.add_handler(MessageHandler(
-    #     filters.TEXT & ~filters.COMMAND, handle_player_answer))
-    # application.add_handler(MessageHandler(
-    #     filters.TEXT & ~filters.COMMAND, handle_player_next_answer))
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            master_id: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_master_id)],
+            players_count: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_players_count)],
+            system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system)],
+            setting: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_setting)],
+            game_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_type)],
+            time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_time)],
+            cost: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_cost)],
+            experience: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_experience)],
+            free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)],
+    )
 
-    # Запускаем бота
+    application.add_handler(conv_handler)
     application.run_polling()
 
 
