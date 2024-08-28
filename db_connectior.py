@@ -2,13 +2,13 @@ import sqlite3
 
 
 class DBConnector:
-    def __init__(self, connection_string='example.db'):
+    def __init__(self, connection_string: str = 'example.db'):
         self.connection_string = connection_string
 
-    def get_connection(self):
+    def get_connection(self) -> sqlite3.Connection:
         return sqlite3.connect(self.connection_string)
 
-    def execute_query(self, query, params=None):
+    def execute_query(self, query: str, params: tuple = None):
         """
         Executes a query against the database.
 
