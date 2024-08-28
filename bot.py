@@ -24,6 +24,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # Обработчик кнопки "Старт"
 
+async def handle_start_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logging.info(update.message.text)
+    if update.message.text == 'Старт':
+        # Показываем вопрос и варианты ответа
+        question_keyboard = [
+            ['Я игрок, ищу something', 'Я мастер, ищу игроков']]
+        await update.message.reply_text(
+            'Выберите пожалуйста вариант:',
+            reply_markup=ReplyKeyboardMarkup(
+                question_keyboard, one_time_keyboard=True, resize_keyboard=True
+            ),
+        )
+
 # Обработчик выбора вариантов ответа
 
 
@@ -51,21 +64,18 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
 
 
-async def handle_start_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logging.info(update.message.text)
-    if update.message.text == 'Старт':
-        # Показываем вопрос и варианты ответа
+# Обработчик выбора вариантов ответа мастера
+
+async def handle_answer_master(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if update.message.text == 'Я мастер, ищу игроков':
         question_keyboard = [
-            ['Я игрок, ищу something', 'Я мастер, ищу игроков']]
+            ['RPG', 'BoardGames']]
         await update.message.reply_text(
             'Выберите пожалуйста вариант:',
             reply_markup=ReplyKeyboardMarkup(
                 question_keyboard, one_time_keyboard=True, resize_keyboard=True
             ),
         )
-
-
-# Обработчик выбора вариантов ответа игрока
 
 
 # async def handle_player_answer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -80,8 +90,10 @@ def main() -> None:
 
     # Регистрируем обработчик команды /start
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.Regex('^Старт$'), handle_start_button))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_answer))
+    application.add_handler(MessageHandler(
+        filters.Regex('^Старт$'), handle_start_button))
+    application.add_handler(MessageHandler(
+        filters.TEXT & ~filters.COMMAND, handle_answer))
     # application.add_handler(MessageHandler(
     #     filters.TEXT & ~filters.COMMAND, handle_player_answer))
     # application.add_handler(MessageHandler(
