@@ -2,11 +2,28 @@ import logging
 import os
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, ConversationHandler, CallbackContext
+from db_connectior import DBConnector
+
+db = DBConnector()
 
 #  States
 
 master_id, players_count, system, setting, game_type, time, cost, experience, free_text = range(
     9)
+
+# Keys map
+
+keys_map = {
+    'master_id': 'Никнейм мастера',
+    'players_count': 'Количество игроков',
+    'system': 'Система',
+    'setting': 'Сеттинг',
+    'game_type': 'Тип игры',
+    'time': 'Время',
+    'cost': 'Стоимость',
+    'experience': 'Опыт игроков',
+    'free_text': '\n'
+}
 
 # Включаем логирование
 logging.basicConfig(
@@ -19,13 +36,18 @@ logger = logging.getLogger(__name__)
 
 async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
-        'Привет Мастер! Как тебя зовут?',
+        'Привет Мастер! Напиши свой никнейм в телеграмме с @?',
     )
     return master_id
 
 
 async def get_master_id(update: Update, context: CallbackContext) -> None:
     context.user_data["master_id"] = update.message.text
+    if not update.message.text.startswith('@'):
+        await update.message.reply_text(
+            'Неверное имя пользователя, начните писать с @',
+        )
+        return master_id
     await update.message.reply_text(
         'Сколько игроков тебе нужно?',
     )
@@ -50,6 +72,7 @@ async def get_system(update: Update, context: CallbackContext) -> None:
 
 async def get_setting(update: Update, context: CallbackContext) -> None:
     context.user_data["setting"] = update.message.text
+    # добавить кнопки!!!
     await update.message.reply_text(
         'Какой у тебя вид игры?',
     )
@@ -58,6 +81,7 @@ async def get_setting(update: Update, context: CallbackContext) -> None:
 
 async def get_game_type(update: Update, context: CallbackContext) -> None:
     context.user_data["game_type"] = update.message.text
+    # Чекнуть возможность добавить выбор даты
     await update.message.reply_text(
         'Выбери время и место',
     )
@@ -93,6 +117,21 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         'Спасибо!',
     )
+    output_string = ''
+    for key, value in context.user_data.items():  # ("key", "value")
+        output_string += keys_map[key] + ": " + value + '\n'
+    await update.message.reply_text(
+        output_string,
+    )
+    query = f"""
+            INSERT INTO games (master_id,  players_count, system, setting, game_type, time, cost, experience, free_text)
+            VALUES (?,?,?,?,?,?,?,?,?)
+            """
+    try:
+        db.execute_query(query, tuple(context.user_data.values()))
+    except Exception as e:
+        print(e)
+
     return ConversationHandler.END
 
 
@@ -104,7 +143,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 def main() -> None:
     application = Application.builder().token(
-        "#").build()
+        "7530680667:AAFFJ6SxFOcji0z0Aug4xbNaPtzznJ-QSG8").build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
