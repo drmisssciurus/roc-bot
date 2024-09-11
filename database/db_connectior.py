@@ -1,5 +1,19 @@
 import sqlite3
 
+# Keys map
+
+keys_map = {
+    'master_id': 'Никнейм мастера',
+    'players_count': 'Количество игроков',
+    'system': 'Система',
+    'setting': 'Сеттинг',
+    'game_type': 'Тип игры',
+    'time': 'Время',
+    'cost': 'Стоимость',
+    'experience': 'Опыт игроков',
+    'free_text': '\n'
+}
+
 
 class DBConnector:
     def __init__(self, connection_string: str = 'example.db'):
@@ -46,3 +60,6 @@ class DBConnector:
             conn.close()
 
         return results
+
+
+db = DBConnector()
