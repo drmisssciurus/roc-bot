@@ -1,8 +1,7 @@
 import logging
-import os
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, ConversationHandler, CallbackContext
-from db_connectior import DBConnector
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackContext
+from database.db_connectior import DBConnector
 
 db = DBConnector()
 
