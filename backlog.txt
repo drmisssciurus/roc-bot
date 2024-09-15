@@ -1,0 +1,2 @@
+1. Removing of fulled game, or marking with flag, in order to exclude from search
+2. Exporting database to the google sheet
