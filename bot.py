@@ -1,5 +1,6 @@
 import logging
 from master import master_conv_handler
+from player import player_conv_handler
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ConversationHandler, CallbackContext
 
@@ -33,6 +34,7 @@ def main() -> None:
         "7530680667:AAFFJ6SxFOcji0z0Aug4xbNaPtzznJ-QSG8").build()
 
     application.add_handler(master_conv_handler)
+    application.add_handler(player_conv_handler)
     application.run_polling()
 
 
