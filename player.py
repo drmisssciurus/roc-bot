@@ -31,17 +31,19 @@ async def get_game_type(update: Update, context: CallbackContext) -> None:
     player_selection = [update.message.text]
     print(player_selection)
     query = """
-            SELECT * FROM games WHERE game_type=?
+            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games WHERE game_type=?
             """
     result = db.execute_query(query, tuple(player_selection))
-    temp_string = ''
+    list_player = []
     for game in result:
+        temp_string = ''
         for i, key in enumerate(keys_map):
-            temp_string += keys_map[key] + ': ' + 
-
+            temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+        list_player.append(temp_string)
     print(result)
+
     await update.message.reply_text(
-        'Выбери меня',
+        '\n\n'.join(list_player),
     )
     return ConversationHandler.END
 
