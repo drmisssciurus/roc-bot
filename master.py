@@ -3,13 +3,14 @@ from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters
 from database.db_connectior import db, keys_map
 
-#  States
+# Define conversation states
 
 master_id, players_count, system, setting, game_type, time, cost, experience, free_text = range(
     9)
 
 
 async def start_master_conversation(update: Update, context: CallbackContext) -> None:
+    # Start the conversation by asking for the master's Telegram nickname
     await update.message.reply_text(
         'Привет Мастер! Напиши свой никнейм в телеграмме с @?',
     )
@@ -17,6 +18,7 @@ async def start_master_conversation(update: Update, context: CallbackContext) ->
 
 
 async def get_master_id(update: Update, context: CallbackContext) -> None:
+    # Retrieve and validate the master's nickname
     print(update.message.text)
     if not update.message.text.startswith('@'):
         await update.message.reply_text(
@@ -43,6 +45,7 @@ async def get_players_count(update: Update, context: CallbackContext) -> None:
             'Только цифры, например 4-5 и тд.',
         )
         return players_count
+    # Save the players_count
     context.user_data["players_count"] = update.message.text
 
     await update.message.reply_text(
@@ -124,12 +127,16 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         'Спасибо! Ваш анонс принят.',
     )
+
+    # Prepare a summary of the collected data
     output_string = ''
     for key, value in context.user_data.items():  # ("key", "value")
         output_string += keys_map[key] + ": " + value + '\n'
+    # Send the summary back to the master
     await update.message.reply_text(
         output_string,
     )
+    # Insert the data into the database
     query = f"""
             INSERT INTO games (master_id,  players_count, system, setting, game_type, time, cost, experience, free_text)
             VALUES (?,?,?,?,?,?,?,?,?)
@@ -138,7 +145,7 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
         db.execute_query(query, tuple(context.user_data.values()))
     except Exception as e:
         print(e)
-
+    # End the conversation
     return ConversationHandler.END
 
 
@@ -146,7 +153,7 @@ async def cancel(update: Update, context: CallbackContext) -> int:
     """End the conversation."""
     await update.message.reply_text('Пока! Надеюсь, скоро снова пообщаемся.')
     return ConversationHandler.END
-
+# Define the conversation handler for the master
 master_conv_handler = ConversationHandler(
     entry_points=[CommandHandler('master', start_master_conversation)],
     states={
