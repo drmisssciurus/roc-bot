@@ -1,2 +1,8 @@
 1. Removing of fulled game, or marking with flag, in order to exclude from search
 2. Exporting database to the google sheeta
+3. Add first button to start
+4. Sending message request to Lev
+5. Google sheet
+6*. If chat would be ig group - delete messages
+
+last*. Count players

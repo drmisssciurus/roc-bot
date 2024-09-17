@@ -1,6 +1,6 @@
 import re
 from telegram import ReplyKeyboardMarkup, Update
-from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters
+from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
 from database.db_connectior import db, keys_map
 
 # Define conversation states
@@ -9,8 +9,10 @@ master_id, players_count, system, setting, game_type, time, cost, experience, fr
     9)
 
 
-async def start_master_conversation(update: Update, context: CallbackContext) -> None:
+async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Start the conversation by asking for the master's Telegram nickname
+    query = update.callback_query
+    await query.answer()
     await update.message.reply_text(
         'Привет Мастер! Напиши свой никнейм в телеграмме с @?',
     )
@@ -25,7 +27,7 @@ async def get_master_id(update: Update, context: CallbackContext) -> None:
             'Неверное имя пользователя, начните писать с @',
         )
         return master_id
-    if not re.match(r'^@[A-Za-z0-9\s.,!?\'\"-]+$', update.message.text):
+    if not re.match(r'^@[A-Za-z0-9_]{5,}$', update.message.text):
         await update.message.reply_text(
             'Неверное имя пользователя, используйте латиницу',
         )
@@ -155,7 +157,8 @@ async def cancel(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 # Define the conversation handler for the master
 master_conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('master', start_master_conversation)],
+    entry_points=[CallbackQueryHandler(
+        start_master_conversation, pattern='^master$')],
     states={
         master_id: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_master_id)],
         players_count: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_players_count)],

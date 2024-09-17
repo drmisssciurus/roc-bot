@@ -1,6 +1,6 @@
 import re
 from telegram import ReplyKeyboardMarkup, Update
-from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters
+from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 from database.db_connectior import db, keys_map
 
 # Defining states for ConversationHandler
@@ -66,7 +66,8 @@ async def cancel(update: Update, context: CallbackContext) -> int:
 
 # Define a dialog handler for the player
 player_conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('player', start_player_conversation)],
+    entry_points=[CallbackQueryHandler(
+        start_player_conversation, pattern='^player$')],
     states={
         game_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_type)],
     },
