@@ -4,6 +4,9 @@ from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, M
     CallbackQueryHandler, ContextTypes
 from database.db_connectior import db, keys_map
 
+chat_id = 1077076904
+# chat_id = 61941797
+
 # Define conversation states
 
 master_id, players_count, system, setting, game_type, time, cost, experience, free_text = range(
@@ -138,6 +141,9 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         output_string,
     )
+
+    # Send message with summary to main resiever
+    await context.bot.send_message(chat_id, "Новый анонс получен:\n" + output_string)
     # Insert the data into the database
     query = f"""
             INSERT INTO games (master_id,  players_count, system, setting, game_type, time, cost, experience, free_text)
@@ -158,7 +164,8 @@ async def cancel(update: Update, context: CallbackContext) -> int:
 
 
 master_conv_handler = ConversationHandler(
-    entry_points=[MessageHandler(filters.Regex('^Мастер'), start_master_conversation)],
+    entry_points=[MessageHandler(filters.Regex(
+        '^Мастер'), start_master_conversation)],
 
     states={
         master_id: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_master_id)],
