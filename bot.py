@@ -1,8 +1,9 @@
 import logging
 from master import master_conv_handler, start_master_conversation
 from player import player_conv_handler, start_player_conversation
-from telegram import CallbackQuery, Update, InlineKeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes, CallbackContext, CallbackQueryHandler, MessageHandler, filters
+from telegram import Update, InlineKeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackContext, CallbackQueryHandler, \
+    MessageHandler, filters
 
 # Включаем логирование
 logging.basicConfig(
@@ -17,8 +18,8 @@ async def start(update: Update, context: CallbackContext) -> None:
     print('Start clicked')
     reply_keyboard = [
         [
-            InlineKeyboardButton("Мастер"),
-            InlineKeyboardButton("Игрок")
+            InlineKeyboardButton("Мастер", callback_data='master'),
+            InlineKeyboardButton("Игрок", callback_data='player')
         ]
     ]
     await update.message.reply_text(
@@ -30,14 +31,19 @@ async def start(update: Update, context: CallbackContext) -> None:
     # Function that handles the button clicks (callback queries)
 
 
+
 async def master_button(update: Update, context: CallbackContext) -> None:
     print("master button selected")
     await start_master_conversation(update, context)
 
 
+
 async def player_button(update: Update, context: CallbackContext) -> None:
     print("player button selected")
-    await start_player_conversation(update, context)
+
+
+
+
 
 
 def main() -> None:
@@ -46,10 +52,9 @@ def main() -> None:
 
     application.add_handler(CommandHandler('start', start))
 
-    application.add_handler(MessageHandler(
-        filters.Regex('^Мастер'), master_button))
-    application.add_handler(MessageHandler(
-        filters.Regex('^Игрок'), player_button))
+    # application.add_handler(MessageHandler(filters.Regex('^Мастер'), master_button))
+    # application.add_handler(MessageHandler(filters.Regex('^Игрок'), player_button))
+
     application.add_handler(master_conv_handler)
     application.add_handler(player_conv_handler)
     application.run_polling()

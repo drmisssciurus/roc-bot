@@ -1,6 +1,7 @@
 import re
 from telegram import ReplyKeyboardMarkup, Update
-from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
+from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters, \
+    CallbackQueryHandler, ContextTypes
 from database.db_connectior import db, keys_map
 
 # Define conversation states
@@ -11,7 +12,6 @@ master_id, players_count, system, setting, game_type, time, cost, experience, fr
 
 async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Start the conversation by asking for the master's Telegram nickname
-
 
     await update.message.reply_text(
         'Привет Мастер! Напиши свой никнейм в телеграмме с @?',
@@ -155,10 +155,11 @@ async def cancel(update: Update, context: CallbackContext) -> int:
     """End the conversation."""
     await update.message.reply_text('Пока! Надеюсь, скоро снова пообщаемся.')
     return ConversationHandler.END
-# Define the conversation handler for the master
+
+
 master_conv_handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(
-        start_master_conversation, pattern='^master$')],
+    entry_points=[MessageHandler(filters.Regex('^Мастер'), start_master_conversation)],
+
     states={
         master_id: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_master_id)],
         players_count: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_players_count)],

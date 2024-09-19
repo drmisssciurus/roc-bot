@@ -66,8 +66,7 @@ async def cancel(update: Update, context: CallbackContext) -> int:
 
 # Define a dialog handler for the player
 player_conv_handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(
-        start_player_conversation, pattern='^player$')],
+    entry_points=[MessageHandler(filters.Regex('^Игрок'), start_player_conversation)],
     states={
         game_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_type)],
     },
