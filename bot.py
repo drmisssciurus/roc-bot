@@ -11,6 +11,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 # Функция обработки команды /start
 
 
@@ -28,22 +29,6 @@ async def start(update: Update, context: CallbackContext) -> None:
             reply_keyboard, one_time_keyboard=True, resize_keyboard=True
         ),
     )
-    # Function that handles the button clicks (callback queries)
-
-
-
-async def master_button(update: Update, context: CallbackContext) -> None:
-    print("master button selected")
-    await start_master_conversation(update, context)
-
-
-
-async def player_button(update: Update, context: CallbackContext) -> None:
-    print("player button selected")
-
-
-
-
 
 
 def main() -> None:
@@ -51,10 +36,6 @@ def main() -> None:
         "7530680667:AAFFJ6SxFOcji0z0Aug4xbNaPtzznJ-QSG8").build()
 
     application.add_handler(CommandHandler('start', start))
-
-    # application.add_handler(MessageHandler(filters.Regex('^Мастер'), master_button))
-    # application.add_handler(MessageHandler(filters.Regex('^Игрок'), player_button))
-
     application.add_handler(master_conv_handler)
     application.add_handler(player_conv_handler)
     application.run_polling()
