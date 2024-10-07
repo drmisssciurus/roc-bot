@@ -14,6 +14,16 @@ keys_map = {
     'free_text': '\n'
 }
 
+players_keys = {
+    'player_name': 'Имя игрока',
+    'contact': 'Способ связи',
+    'game_type': 'Тип игры',
+    'system': 'Сеттинг',
+    'time': 'Предпочтительное время',
+    'price': 'Предпочтительный прайс',
+    'free_text': '\n'
+}
+
 
 class DBConnector:
     def __init__(self, connection_string: str = 'example.db'):
