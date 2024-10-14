@@ -1,3 +1,4 @@
+import asyncio
 import re
 from telegram import ReplyKeyboardMarkup, Update, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters, CallbackQueryHandler
@@ -10,34 +11,48 @@ selection, player_name, contact, game_type, system, time, price, free_text, sear
 
 
 async def start_player_conversation(update: Update, context: CallbackContext) -> None:
+    print("start_player_conversation() called")
     context.user_data.clear()
-    reply_keyboard = [
-        [
-            InlineKeyboardButton("Поиск", callback_data='search'),
-            InlineKeyboardButton("Заявка", callback_data='request')
-        ]
-    ]
+    # reply_keyboard = [
+    #     [
+    #         InlineKeyboardButton("Поиск", callback_data='search'),
+    #         InlineKeyboardButton("Заявка", callback_data='request')
+    #     ]
+    # ]
+    reply_keyboard = [["Поиск", "Заявка"]]
     await update.message.reply_text(
         'Привет Игрок! Выбери что ты хочешь?',
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, resize_keyboard=True
         )
     )
+
     return selection
 
 
 async def get_player_selection(update: Update, context: CallbackContext) -> None:
+    print("get_player_selection() called")
+    await asyncio.sleep(1)
     print(update.message.text)
     if update.message.text == "Заявка":
         await update.message.reply_text(
             'Напиши свое имя.',
         )
         return player_name
-    else:
+    elif update.message.text == "Поиск":
+        await update.message.reply_text(
+            'Выбери что ты хочешь?',
+        )
+
         return search
+    else:
+        await update.message.reply_text('Пожалуйста выбери "Заявка" или "Поиск".')
+        return selection
 
 
 async def get_player_name(update: Update, context: CallbackContext) -> None:
+    print("get_player_name() called")
+
     print(update.message.text)
 
     context.user_data["player_name"] = update.message.text
@@ -48,6 +63,7 @@ async def get_player_name(update: Update, context: CallbackContext) -> None:
 
 
 async def get_player_contact(update: Update, context: CallbackContext) -> None:
+    print("get_player_contact() called")
     print(update.message.text)
 
     context.user_data["contact"] = update.message.text
@@ -63,6 +79,8 @@ async def get_player_contact(update: Update, context: CallbackContext) -> None:
 
 
 async def get_game_type(update: Update, context: CallbackContext) -> None:
+    print("get_game_type() called")
+
     print(update.message.text)
 
     context.user_data["game_type"] = update.message.text
@@ -73,6 +91,8 @@ async def get_game_type(update: Update, context: CallbackContext) -> None:
 
 
 async def get_system_type(update: Update, context: CallbackContext) -> None:
+    print("get_system_type() called")
+
     print(update.message.text)
 
     context.user_data["system"] = update.message.text
@@ -83,6 +103,8 @@ async def get_system_type(update: Update, context: CallbackContext) -> None:
 
 
 async def get_time(update: Update, context: CallbackContext) -> None:
+    print("get_time() called")
+
     print(update.message.text)
 
     context.user_data["time"] = update.message.text
@@ -93,6 +115,8 @@ async def get_time(update: Update, context: CallbackContext) -> None:
 
 
 async def get_price(update: Update, context: CallbackContext) -> None:
+    print("get_price() called")
+
     print(update.message.text)
 
     context.user_data["price"] = update.message.text
@@ -103,6 +127,8 @@ async def get_price(update: Update, context: CallbackContext) -> None:
 
 
 async def get_free_text(update: Update, context: CallbackContext) -> None:
+    print("get_free_text() called")
+
     print(update.message.text)
 
     context.user_data["free_text"] = update.message.text
@@ -136,13 +162,16 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
 
 
 async def get_player_search(update: Update, context: CallbackContext) -> None:
+    print("get_player_search() called")
     print(update.message.text)
-    reply_keyboard = [
-        [
-            InlineKeyboardButton("Покажи мне все", callback_data='all'),
-            InlineKeyboardButton("Я хочу выбрать", callback_data='filter')
-        ]
-    ]
+
+    # reply_keyboard = [
+    #     [
+    #         InlineKeyboardButton("Покажи мне все", callback_data='all'),
+    #         InlineKeyboardButton("Я хочу выбрать", callback_data='filter')
+    #     ]
+    # ]
+    reply_keyboard = [["Покажи мне все", "Я хочу выбрать"]]
     await update.message.reply_text(
         'Выбери что ты хочешь?',
         reply_markup=ReplyKeyboardMarkup(
@@ -153,14 +182,17 @@ async def get_player_search(update: Update, context: CallbackContext) -> None:
 
 
 async def get_show_all(update: Update, context: CallbackContext) -> None:
+    print("get_show_all() called")
+
     if update.message.text == "Покажи мне все":
         list_player = get_game_announcement()
         await update.message.reply_text(
             '\n\n'.join(list_player),
         )
         return ConversationHandler.END
-    else:
-        return player_filter
+    # else:
+    #     return ConversationHandler.END
+    return None
 
 
 # async def start_player_conversation(update: Update, context: CallbackContext) -> None:
