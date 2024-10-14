@@ -11,7 +11,7 @@ keys_map = {
     'time': 'Время',
     'cost': 'Стоимость',
     'experience': 'Опыт игроков',
-    'free_text': '\n'
+    'free_text': '\nОписание'
 }
 
 players_keys = {
@@ -21,7 +21,7 @@ players_keys = {
     'system': 'Сеттинг',
     'time': 'Предпочтительное время',
     'price': 'Предпочтительный прайс',
-    'free_text': '\n'
+    'free_text': '\nПожелания'
 }
 
 

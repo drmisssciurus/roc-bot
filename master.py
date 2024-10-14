@@ -15,7 +15,7 @@ master_id, players_count, system, setting, game_type, time, cost, experience, fr
 
 async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Start the conversation by asking for the master's Telegram nickname
-
+    context.user_data.clear()
     await update.message.reply_text(
         'Привет Мастер! Напиши свой никнейм в телеграмме с @?',
     )

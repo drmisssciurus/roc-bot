@@ -10,6 +10,7 @@ selection, player_name, contact, game_type, system, time, price, free_text, sear
 
 
 async def start_player_conversation(update: Update, context: CallbackContext) -> None:
+    context.user_data.clear()
     reply_keyboard = [
         [
             InlineKeyboardButton("Поиск", callback_data='search'),
@@ -122,7 +123,7 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     # Insert the data into the database
     query = f"""
             INSERT INTO players_requests (player_name, contact, game_type, system, time, price, free_text)
-            VALUES (?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?)
             """
     try:
         db.execute_query(query, tuple(context.user_data.values()))
