@@ -1,12 +1,12 @@
 import re
 from telegram import ReplyKeyboardMarkup, Update, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters, CallbackQueryHandler
-from database.db_connectior import db, players_keys
+from database.db_connectior import db, players_keys, keys_map
 
 # Defining states for ConversationHandler
 
-selection, player_name, contact, game_type, system, time, price, free_text, search = range(
-    9)
+selection, player_name, contact, game_type, system, time, price, free_text, search, show_all = range(
+    10)
 
 
 async def start_player_conversation(update: Update, context: CallbackContext) -> None:
@@ -132,6 +132,36 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     # End the conversation
     return ConversationHandler.END
 
+# Player filter functions
+
+
+async def get_player_search(update: Update, context: CallbackContext) -> None:
+    print(update.message.text)
+    reply_keyboard = [
+        [
+            InlineKeyboardButton("Покажи мне все", callback_data='all'),
+            InlineKeyboardButton("Я хочу выбрать", callback_data='filter')
+        ]
+    ]
+    await update.message.reply_text(
+        'Выбери что ты хочешь?',
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True, resize_keyboard=True
+        )
+    )
+    return show_all
+
+
+async def get_show_all(update: Update, context: CallbackContext) -> None:
+    if update.message.text == "Покажи мне все":
+        list_player = get_game_announcement()
+        await update.message.reply_text(
+            '\n\n'.join(list_player),
+        )
+        return ConversationHandler.END
+    else:
+        return player_filter
+
 
 # async def start_player_conversation(update: Update, context: CallbackContext) -> None:
 #     # Query to get unique game types from the database
@@ -154,34 +184,24 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
 #     return game_type
 
 
-# async def get_game_type(update: Update, context: CallbackContext) -> None:
-#     print(update.message.text)
-
-#     # Get the user's selected game type
-#     # context.user_data["game_type"] = update.message.text
-#     player_selection = [update.message.text]
-#     print(player_selection)
-
-#     # Query to get games of the selected type from the database
-#     query = """
-#             SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games WHERE game_type=?
-#             """
-#     # Execute a request with the selected game type parameter
-#     result = db.execute_query(query, tuple(player_selection))
-#     list_player = []
-#     # Generating a list of games to display to the user
-#     for game in result:
-#         temp_string = ''
-#         for i, key in enumerate(keys_map):
-#             temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
-#         list_player.append(temp_string)
-#     print(result)
-#     # Sending a list of available games to the user
-#     await update.message.reply_text(
-#         '\n\n'.join(list_player),
-#     )
-#     # Ending the dialogue
-#     return ConversationHandler.END
+def get_game_announcement() -> None:
+    # Query to get games of the selected type from the database
+    query = """
+            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games
+            """
+    # Execute a request with the selected game type parameter
+    result = db.execute_query(query)
+    list_player = []
+    # Generating a list of games to display to the user
+    for game in result:
+        temp_string = ''
+        for i, key in enumerate(keys_map):
+            temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+        list_player.append(temp_string)
+    print(result)
+    # Sending a list of available games to the user
+    # Ending the dialogue
+    return list_player
 
 
 async def cancel(update: Update, context: CallbackContext) -> int:
@@ -202,6 +222,8 @@ player_conv_handler = ConversationHandler(
         time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_time)],
         price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_price)],
         free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text)],
+        search: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_search)],
+        show_all: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_show_all)],
     },
     fallbacks=[CommandHandler('cancel', cancel)],
 )

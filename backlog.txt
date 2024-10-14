@@ -1,7 +1,7 @@
 1. Removing of fulled game, or marking with flag, in order to exclude from search
 2. Exporting database to the google sheeta
 3. Add first button to start (done)
-4. Sending message request to Lev
+4. Sending message request to Lev (done)
 5*. If chat would be ig group - delete messages
 6. Подтягивать расписание для выбора даты игры у мастера (держать расписание игр на неделю)
 7. Картинка в посте (драйв и ссылка в базе данных на картинку)
@@ -13,7 +13,7 @@
 13. Ввод цены цифрами (дополнительно в свободном цексте дописать поповоду цены)
 14. Свободные дополнительно
 15.Возможность бота реагировать на хэштэги
-16. ветка игрока заявка
-17ю ветка игрока поиск(фильтр)
+16. ветка игрока заявка (done)
+17. ветка игрока поиск(фильтр)
 
 last*. Count players
