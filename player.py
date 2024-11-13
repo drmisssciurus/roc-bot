@@ -4,50 +4,23 @@ from telegram import ReplyKeyboardMarkup, Update, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, CommandHandler, MessageHandler, filters, CallbackQueryHandler
 from database.db_connectior import db, players_keys, keys_map
 
-# Defining states for ConversationHandler
+# Defining states for Application
+player_name, contact, game_type, system, time, price, free_text = range(
+    7)
 
-selection, player_name, contact, game_type, system, time, price, free_text, search, show_all = range(
-    10)
+# Define player search states
+search_type, search_system, search_price = range(3)
 
 
-async def start_player_conversation(update: Update, context: CallbackContext) -> None:
+async def start_player_application(update: Update, context: CallbackContext) -> None:
     print("start_player_conversation() called")
     context.user_data.clear()
-    # reply_keyboard = [
-    #     [
-    #         InlineKeyboardButton("Поиск", callback_data='search'),
-    #         InlineKeyboardButton("Заявка", callback_data='request')
-    #     ]
-    # ]
-    reply_keyboard = [["Поиск", "Заявка"]]
     await update.message.reply_text(
-        'Привет Игрок! Выбери что ты хочешь?',
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, resize_keyboard=True
-        )
+        "Как тебя зовут?"
     )
 
-    return selection
+    return player_name
 
-
-async def get_player_selection(update: Update, context: CallbackContext) -> None:
-    print("get_player_selection() called")
-    await asyncio.sleep(1)
-    print(update.message.text)
-    if update.message.text == "Заявка":
-        await update.message.reply_text(
-            'Напиши свое имя.',
-        )
-        return player_name
-    elif update.message.text == "Поиск":
-        await update.message.reply_text(
-            'Выбери что ты хочешь?',
-        )
-
-        return search
-    else:
-        await update.message.reply_text('Пожалуйста выбери "Заявка" или "Поиск".')
-        return selection
 
 
 async def get_player_name(update: Update, context: CallbackContext) -> None:
@@ -161,25 +134,6 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
 # Player filter functions
 
 
-async def get_player_search(update: Update, context: CallbackContext) -> None:
-    print("get_player_search() called")
-    print(update.message.text)
-
-    # reply_keyboard = [
-    #     [
-    #         InlineKeyboardButton("Покажи мне все", callback_data='all'),
-    #         InlineKeyboardButton("Я хочу выбрать", callback_data='filter')
-    #     ]
-    # ]
-    reply_keyboard = [["Покажи мне все", "Я хочу выбрать"]]
-    await update.message.reply_text(
-        'Выбери что ты хочешь?',
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, resize_keyboard=True
-        )
-    )
-    return show_all
-
 
 async def get_show_all(update: Update, context: CallbackContext) -> None:
     print("get_show_all() called")
@@ -193,28 +147,6 @@ async def get_show_all(update: Update, context: CallbackContext) -> None:
     # else:
     #     return ConversationHandler.END
     return None
-
-
-# async def start_player_conversation(update: Update, context: CallbackContext) -> None:
-#     # Query to get unique game types from the database
-#     query = """
-#             SELECT DISTINCT game_type FROM games
-#             """
-#     # Execute the query and get the results
-#     result = db.execute_query(query)
-#     # Forming a keyboard with game type options
-#     keyboard = [item[0] for item in result]
-#     question_keyboard = [keyboard]
-#     # Sending a message to the user asking them to select a game type
-#     await update.message.reply_text(
-#         'Привет Игрок! Выбери что ты ищешь?',
-#         reply_markup=ReplyKeyboardMarkup(
-#             question_keyboard, one_time_keyboard=True, resize_keyboard=True
-#         ),
-#     )
-#     # Move to the next dialog state
-#     return game_type
-
 
 def get_game_announcement() -> None:
     # Query to get games of the selected type from the database
@@ -236,17 +168,45 @@ def get_game_announcement() -> None:
     return list_player
 
 
+
+
+async def start_search_conversation(update: Update, context: CallbackContext) -> None:
+    print("dailkshjfjkashjdf")
+
+
+async def get_search_type(update: Update, context: CallbackContext) -> None:
+    print(update.message.text)
+    await update.message.reply_text(
+        "Тип игры выбран"
+    )
+    return search_system
+
+
+async def get_search_system(update: Update, context: CallbackContext) -> None:
+    print(update.message.text)
+    await update.message.reply_text(
+        "Система игры выбрана"
+    )
+    return search_price
+
+
+async def get_search_price(update: Update, context: CallbackContext) -> None:
+    print(update.message.text)
+    await update.message.reply_text(
+        "Цена выбрана"
+    )
+    return ConversationHandler.END
+
 async def cancel(update: Update, context: CallbackContext) -> int:
     """End the conversation."""
     await update.message.reply_text('Пока! Надеюсь, скоро снова пообщаемся.')
     return ConversationHandler.END
 
-# Define a dialog handler for the player
-player_conv_handler = ConversationHandler(
+
+player_application_conversation_handler = ConversationHandler(
     entry_points=[MessageHandler(filters.Regex(
-        '^Игрок'), start_player_conversation)],
+        '^Заявка'), start_player_application)],
     states={
-        selection: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_selection)],
         player_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_name)],
         contact: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_contact)],
         game_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_type)],
@@ -254,8 +214,19 @@ player_conv_handler = ConversationHandler(
         time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_time)],
         price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_price)],
         free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text)],
-        search: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_search)],
-        show_all: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_show_all)],
+
     },
     fallbacks=[CommandHandler('cancel', cancel)],
+)
+
+player_search_conversation_handler = ConversationHandler(
+    entry_points=[MessageHandler(filters.Regex(
+        '^Поиск'), start_search_conversation)],
+    states={
+        search_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_search_type)],
+        search_system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_search_system)],
+        search_price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_search_price)],
+
+    },
+    fallbacks=[CommandHandler('cancel', cancel)]
 )

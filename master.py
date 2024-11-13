@@ -163,7 +163,7 @@ async def cancel(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 
-master_conv_handler = ConversationHandler(
+master_conversation_handler = ConversationHandler(
     entry_points=[MessageHandler(filters.Regex(
         '^Мастер'), start_master_conversation)],
 
