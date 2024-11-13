@@ -226,14 +226,14 @@ async def get_search_system(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
     context.user_data["game_system"] = player_choise_system = update.message.text
     query = """
-            SELECT DISTINCT cost FROM games WHERE game_type=? and system=? order by cost asc
+            SELECT DISTINCT cost FROM games WHERE game_type=? AND system=? ORDER BY cost ASC;
             """
     result = db.execute_query(
-        query, (player_choise_system, context.user_data["game_type"]))
+        query, (context.user_data["game_type"], player_choise_system))
     print(result)
     buttons = []
     for cost in result:
-        buttons.append(cost[0])
+        buttons.append(str(cost[0]))
     print(buttons)
     question_keyboard = [buttons]
     await update.message.reply_text(

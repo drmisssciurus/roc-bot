@@ -56,6 +56,7 @@ class DBConnector:
             if query.strip().upper().startswith('SELECT'):
                 # Fetch all results if it's a SELECT query
                 results = cursor.fetchall()
+                print(results)
             else:
                 # Commit changes if it's an INSERT, UPDATE, or DELETE query
                 conn.commit()
