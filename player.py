@@ -203,18 +203,44 @@ async def get_selection(update: Update, context: CallbackContext) -> None:
 
 async def get_search_type(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
-    player_choise_type = update.message.text
+    context.user_data["game_type"] = player_choise_type = update.message.text
+    query = """
+            SELECT DISTINCT system FROM games WHERE game_type=?
+            """
+    result = db.execute_query(query, (player_choise_type,))
+    buttons = []
+    for system in result:
+        buttons.append(system[0])
+    print(buttons)
+    question_keyboard = [buttons]
     await update.message.reply_text(
-        "Какая система?"
+        "Какая система?",
+        reply_markup=ReplyKeyboardMarkup(
+            question_keyboard, one_time_keyboard=True, resize_keyboard=True
+        ),
     )
     return search_system
 
 
 async def get_search_system(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
-    player_choise_system = update.message.text
+    context.user_data["game_system"] = player_choise_system = update.message.text
+    query = """
+            SELECT DISTINCT cost FROM games WHERE game_type=? and system=? order by cost asc
+            """
+    result = db.execute_query(
+        query, (player_choise_system, context.user_data["game_type"]))
+    print(result)
+    buttons = []
+    for cost in result:
+        buttons.append(cost[0])
+    print(buttons)
+    question_keyboard = [buttons]
     await update.message.reply_text(
-        "Какая цена?"
+        "Какая стоимость?",
+        reply_markup=ReplyKeyboardMarkup(
+            question_keyboard, one_time_keyboard=True, resize_keyboard=True
+        ),
     )
     return search_price
 
