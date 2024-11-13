@@ -248,8 +248,21 @@ async def get_search_system(update: Update, context: CallbackContext) -> None:
 async def get_search_price(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
     player_choise_price = update.message.text
+    query = """
+            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games WHERE game_type=? AND system=? AND cost=?;
+            """
+    result = db.execute_query(
+        query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
+    print(result)
+    list_player = []
+    for game in result:
+        temp_string = ''
+        for i, key in enumerate(keys_map):
+            temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+        list_player.append(temp_string)
+    print(result)
     await update.message.reply_text(
-        "КОНЕЦ?"
+        '\n\n'.join(list_player),
     )
     return ConversationHandler.END
 
