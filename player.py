@@ -9,7 +9,7 @@ player_name, contact, game_type, system, time, price, free_text = range(
     7)
 
 # Define player search states
-search_type, search_system, search_price = range(3)
+player_selection, search_type, search_system, search_price = range(4)
 
 
 async def start_player_application(update: Update, context: CallbackContext) -> None:
@@ -20,7 +20,6 @@ async def start_player_application(update: Update, context: CallbackContext) -> 
     )
 
     return player_name
-
 
 
 async def get_player_name(update: Update, context: CallbackContext) -> None:
@@ -94,7 +93,7 @@ async def get_price(update: Update, context: CallbackContext) -> None:
 
     context.user_data["price"] = update.message.text
     await update.message.reply_text(
-        'Если есть что сказать, скажи',
+        'Если есть какие-то пожелания, напиши',
     )
     return free_text
 
@@ -106,7 +105,7 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
 
     context.user_data["free_text"] = update.message.text
     await update.message.reply_text(
-        'Спасибо! Ваш анонс принят.',
+        'Спасибо! Ваша заявка принята.',
     )
     # Prepare a summary of the collected data
     output_string = ''
@@ -134,7 +133,6 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
 # Player filter functions
 
 
-
 async def get_show_all(update: Update, context: CallbackContext) -> None:
     print("get_show_all() called")
 
@@ -147,6 +145,7 @@ async def get_show_all(update: Update, context: CallbackContext) -> None:
     # else:
     #     return ConversationHandler.END
     return None
+
 
 def get_game_announcement() -> None:
     # Query to get games of the selected type from the database
@@ -168,34 +167,66 @@ def get_game_announcement() -> None:
     return list_player
 
 
-
-
 async def start_search_conversation(update: Update, context: CallbackContext) -> None:
-    print("dailkshjfjkashjdf")
+    print("start_search_conversation")
+    question_keyboard = [
+        ['Покажи мне все игры', 'Я хочу выбрать по фильтру']]
+    await update.message.reply_text(
+        'Выбери вариант:',
+        reply_markup=ReplyKeyboardMarkup(
+            question_keyboard, one_time_keyboard=True, resize_keyboard=True
+        ),
+    )
+    return player_selection
+
+
+async def get_selection(update: Update, context: CallbackContext) -> None:
+    print(update.message.text)
+
+    if update.message.text == "Покажи мне все игры":
+        list_player = get_game_announcement()
+        await update.message.reply_text(
+            '\n\n'.join(list_player),
+        )
+        return ConversationHandler.END
+    else:
+        question_keyboard = [
+            ['Ваншот', 'Кампания', 'Модуль']]
+        await update.message.reply_text(
+            "Выбери тип игры:",
+            reply_markup=ReplyKeyboardMarkup(
+                question_keyboard, one_time_keyboard=True, resize_keyboard=True
+            ),
+        )
+        return search_type
 
 
 async def get_search_type(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
+    player_choise_type = update.message.text
     await update.message.reply_text(
-        "Тип игры выбран"
+        "Какая система?"
     )
     return search_system
 
 
 async def get_search_system(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
+    player_choise_system = update.message.text
     await update.message.reply_text(
-        "Система игры выбрана"
+        "Какая цена?"
     )
     return search_price
 
 
 async def get_search_price(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
+    player_choise_price = update.message.text
     await update.message.reply_text(
-        "Цена выбрана"
+        "КОНЕЦ?"
     )
     return ConversationHandler.END
+
 
 async def cancel(update: Update, context: CallbackContext) -> int:
     """End the conversation."""
@@ -223,6 +254,7 @@ player_search_conversation_handler = ConversationHandler(
     entry_points=[MessageHandler(filters.Regex(
         '^Поиск'), start_search_conversation)],
     states={
+        player_selection: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_selection)],
         search_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_search_type)],
         search_system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_search_system)],
         search_price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_search_price)],
