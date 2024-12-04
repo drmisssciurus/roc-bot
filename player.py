@@ -208,6 +208,13 @@ async def get_search_type(update: Update, context: CallbackContext) -> None:
             SELECT DISTINCT system FROM games WHERE game_type=?
             """
     result = db.execute_query(query, (player_choise_type,))
+
+    if not result:
+        await update.message.reply_text(
+            "Ничего не найдено по указанным параметрам. Попробуйте изменить фильтр."
+        )
+        return ConversationHandler.END
+
     buttons = []
     for system in result:
         buttons.append(system[0])
@@ -231,6 +238,7 @@ async def get_search_system(update: Update, context: CallbackContext) -> None:
     result = db.execute_query(
         query, (context.user_data["game_type"], player_choise_system))
     print(result)
+
     buttons = []
     for cost in result:
         buttons.append(str(cost[0]))
@@ -246,7 +254,7 @@ async def get_search_system(update: Update, context: CallbackContext) -> None:
 
 
 async def get_search_price(update: Update, context: CallbackContext) -> None:
-    print(update.message.text)
+    print("get_search_price: " + update.message.text)
     player_choise_price = update.message.text
     query = """
             SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games WHERE game_type=? AND system=? AND cost=?;
@@ -254,6 +262,7 @@ async def get_search_price(update: Update, context: CallbackContext) -> None:
     result = db.execute_query(
         query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
     print(result)
+
     list_player = []
     for game in result:
         temp_string = ''
