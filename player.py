@@ -299,8 +299,10 @@ player_application_conversation_handler = ConversationHandler(
 )
 
 player_search_conversation_handler = ConversationHandler(
-    entry_points=[MessageHandler(filters.Regex(
-        '^Поиск'), start_search_conversation)],
+    entry_points=[CallbackQueryHandler(
+        start_search_conversation, pattern="^search$",)],
+    # MessageHandler(filters.Regex(
+    # '^search'), start_search_conversation)],
     states={
         player_selection: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_selection)],
         search_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_search_type)],

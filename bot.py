@@ -39,19 +39,33 @@ print(SELECTION)
 
 async def choose_player_actions(update: Update, context: CallbackContext) -> None:
     print("choose_action() called")
-    print(update.message.text)
+    print(update.callback_query.data)
+
+    # reply_keyboard = [
+    #     [
+    #         "Поиск", "Заявка"
+    #     ]
+    # ]
 
     reply_keyboard = [
-        [
-            "Поиск", "Заявка"
-        ]
+        [InlineKeyboardButton("Поиск", callback_data='search')],
+        [InlineKeyboardButton("Заявка", callback_data='application')]
     ]
-    await update.message.reply_text(
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, resize_keyboard=True
-        ),
-        text="Что хочешь сделать?"
-    )
+    reply_markup = InlineKeyboardMarkup(reply_keyboard)
+
+    # Edit the message reply markup
+    # await update.callback_query.edit_message_text(text="Что хочешь сделать?")
+    await update.effective_message.reply_text("Что ты хочешь сделать?")
+    await update.callback_query.edit_message_reply_markup(
+        reply_markup=reply_markup)
+
+    # await update.callback_query.message.reply_text()
+    # await update.message.reply_text(
+    #     reply_markup=ReplyKeyboardMarkup(
+    #         reply_keyboard, one_time_keyboard=True, resize_keyboard=True
+    #     ),
+    #     text="Что хочешь сделать?"
+    # )
     return PLAYER_ACTIONS
 
 
@@ -91,11 +105,12 @@ if __name__ == '__main__':
         set_bot_commands(application))
 
     selection_handlers = [
-        # master_conversation_handler,
-        # CallbackQueryHandler(handle_selection, pattern="^(master|player)$"),
-        MessageHandler(filters.Regex('^Мастер'), handle_selection),
+        master_conversation_handler,
+        CallbackQueryHandler(handle_selection, pattern="^(master|player)$"),
 
-        MessageHandler(filters.Regex('^Игрок'), choose_player_actions)
+        # MessageHandler(filters.Regex('^Мастер'), handle_selection),
+
+        # MessageHandler(filters.Regex('^Игрок'), choose_player_actions)
     ]
 
     player_selections = [
