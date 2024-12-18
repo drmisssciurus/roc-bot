@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, ConversationHandler, Messa
     CallbackQueryHandler, Updater, ContextTypes
 
 from bot import set_bot_commands
-from database.db_connectior import keys_map, db
+from database.db_connectior import keys_map, players_keys, db
 from master import master_conversation_handler, chat_id
 from player import player_application_conversation_handler, player_search_conversation_handler
 
@@ -16,7 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, players_count, system, setting, game_type, time, cost, experience, free_text, state_2, state_2_1, state_2_2, state_2_1_1, state_2_2_1 = range(16)
+state_0, state_1, master_id, players_count, system, setting, game_type, time, cost, experience, free_text, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text = range(
+    20)
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -43,9 +44,7 @@ async def first_selection(update: Update, context: CallbackContext):
     if query.data == 'master':
         return await start_master_conversation(update, context)
     elif query.data == 'player':
-        return await handle_state_2(update, context)
-
-
+        return await choose_player_actions(update, context)
 
 
 async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -203,42 +202,169 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     return ConversationHandler.END
 
 
-
 async def handle_state_1_2(update: Update, context: CallbackContext):
     print('state_1_2')
     return ConversationHandler.END
 
 
-async def handle_state_2(update: Update, context: CallbackContext):
+async def choose_player_actions(update: Update, context: CallbackContext):
     print("player")
     reply_keyboard = [
         [
-            InlineKeyboardButton("State 2.1", callback_data="state_2.1"),
-            InlineKeyboardButton("State 2.2", callback_data="state_2.2"),
+            InlineKeyboardButton("Поиск", callback_data="search"),
+            InlineKeyboardButton("Заявка", callback_data="application"),
         ]
     ]
     reply_markup = InlineKeyboardMarkup(reply_keyboard)
 
-    new_message_text = "Select between 2.1 and 2.2"
+    new_message_text = "Что хочешь сделать?"
     await update.callback_query.edit_message_text(text=new_message_text, reply_markup=reply_markup)
-    return state_2
+
+    return player_actions
 
 
 async def second_selection(update: Update, context: CallbackContext):
     print("second_selection")
-    if update.callback_query.data == 'state_2.1':
-        return await handle_state_2_1(update, context)
+    if update.callback_query.data == 'application':
+        return await start_player_application(update, context)
     else:
         return await handle_state_2_2(update, context)
 
 
-async def handle_state_2_1(update: Update, context: CallbackContext):
-    print("state_2.1")
-    return state_2_1_1
+async def start_player_application(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    query.answer()
+    print("start_player_conversation() called")
+    context.user_data.clear()
+    await update.effective_message.reply_text(
+        "Как тебя зовут?"
+    )
+
+    return player_name
 
 
-async def handle_state_2_1_1(update: Update, context: CallbackContext):
-    print("state_2.1.1")
+async def get_player_name(update: Update, context: CallbackContext) -> None:
+    print("get_player_name() called")
+
+    print(update.effective_message.text)
+
+    context.user_data["player_name"] = update.effective_message.text
+    await update.effective_message.reply_text(
+        'Как с тобой связаться?',
+    )
+    return player_contact
+
+
+async def get_player_contact(update: Update, context: CallbackContext) -> None:
+    print("get_player_contact() called")
+    print(update.effective_message.text)
+
+    context.user_data["contact"] = update.effective_message.text
+
+    reply_keyboard = [
+        [
+            InlineKeyboardButton("Ваншот", callback_data="Ваншот"),
+            InlineKeyboardButton("Кампания", callback_data="Кампания"),
+            InlineKeyboardButton("Модуль", callback_data="Модуль"),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(reply_keyboard)
+    await update.effective_message.reply_text(
+        'Какой тип игры?',
+        reply_markup=reply_markup,
+    )
+
+    # context.user_data["contact"] = update.message.text
+    # question_keyboard = [
+    #     ['Ваншот', 'Кампания', 'Модуль']]
+    # await update.message.reply_text(
+    #     'Какой тип игры?',
+    #     reply_markup=ReplyKeyboardMarkup(
+    #         question_keyboard, one_time_keyboard=True, resize_keyboard=True
+    #     ),
+    # )
+
+    return player_game_type
+
+
+async def get_player_game_type(update: Update, context: CallbackContext) -> None:
+    print("get_game_type() called")
+
+    print(update.effective_message.text)
+
+    context.user_data["game_type"] = update.effective_message.text
+    await update.effective_message.reply_text(
+        'Какая система?',
+    )
+    return system_type
+
+
+async def get_system_type(update: Update, context: CallbackContext) -> None:
+    print("get_system_type() called")
+
+    print(update.effective_message.text)
+
+    context.user_data["system"] = update.effective_message.text
+    await update.effective_message.reply_text(
+        'В какое время тебе предпочтительнее?',
+    )
+    return player_time
+
+
+async def get_player_time(update: Update, context: CallbackContext) -> None:
+    print("get_time() called")
+
+    print(update.effective_message.text)
+
+    context.user_data["time"] = update.effective_message.text
+    await update.effective_message.reply_text(
+        'Если есть предпочтения по цене напиши',
+    )
+    return price
+
+
+async def get_price(update: Update, context: CallbackContext) -> None:
+    print("get_price() called")
+
+    print(update.effective_message.text)
+
+    context.user_data["price"] = update.effective_message.text
+    await update.effective_message.reply_text(
+        'Если есть какие-то пожелания, напиши',
+    )
+    return player_free_text
+
+
+async def get_player_free_text(update: Update, context: CallbackContext) -> None:
+    print("get_free_text() called")
+
+    print(update.effective_message.text)
+
+    context.user_data["free_text"] = update.effective_message.text
+    await update.effective_message.reply_text(
+        'Спасибо! Ваша заявка принята.',
+    )
+    # Prepare a summary of the collected data
+    output_string = ''
+    for key, value in context.user_data.items():  # ("key", "value")
+        output_string += players_keys[key] + ": " + value + '\n'
+    # Send the summary back to the master
+    await update.effective_message.reply_text(
+        output_string,
+    )
+
+    # Send message with summary to main resiever
+    # await context.bot.send_message(chat_id, "Новый анонс получен:\n" + output_string)
+    # Insert the data into the database
+    query = f"""
+            INSERT INTO players_requests (player_name, contact, game_type, system, time, price, free_text)
+            VALUES (?,?,?,?,?,?,?)
+            """
+    try:
+        db.execute_query(query, tuple(context.user_data.values()))
+    except Exception as e:
+        print(e)
+    # End the conversation
     return ConversationHandler.END
 
 
@@ -265,8 +391,6 @@ if __name__ == '__main__':
     application.bot_data["on_startup"] = lambda: application.loop.create_task(
         set_bot_commands(application))
 
-
-
     """
     ta="oneshot"),
 data="campaign")
@@ -290,11 +414,15 @@ ta="module"),
             experience: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_experience)],
             free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text)],
             # state_1_2: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_state_1_2)],
-            state_2: [CallbackQueryHandler(second_selection, pattern="^(state_2.1|state_2.2)$")],
-            state_2_1: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_state_2_1)],
-            state_2_2: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_state_2_2)],
-            state_2_1_1: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_state_2_1_1)],
-            state_2_2_1: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_state_2_2_1)]
+            player_actions: [CallbackQueryHandler(second_selection, pattern="^(search|application)$")],
+            player_application: [MessageHandler(filters.TEXT & ~filters.COMMAND, start_player_application)],
+            player_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_name)],
+            player_contact: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_contact)],
+            player_game_type: [CallbackQueryHandler(get_player_game_type, pattern="^(Ваншот|Кампания|Модуль)$")],
+            system_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system_type)],
+            player_time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_time)],
+            price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_price)],
+            player_free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
         },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
