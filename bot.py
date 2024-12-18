@@ -41,31 +41,16 @@ async def choose_player_actions(update: Update, context: CallbackContext) -> Non
     print("choose_action() called")
     print(update.callback_query.data)
 
-    # reply_keyboard = [
-    #     [
-    #         "Поиск", "Заявка"
-    #     ]
-    # ]
 
     reply_keyboard = [
         [InlineKeyboardButton("Поиск", callback_data='search')],
         [InlineKeyboardButton("Заявка", callback_data='application')]
     ]
-    reply_markup = InlineKeyboardMarkup(reply_keyboard)
+    reply_markup = InlineKeyboardMarkup(reply_keyboard, )
 
-    # Edit the message reply markup
-    # await update.callback_query.edit_message_text(text="Что хочешь сделать?")
-    await update.effective_message.reply_text("Что ты хочешь сделать?")
-    await update.callback_query.edit_message_reply_markup(
-        reply_markup=reply_markup)
+    new_message_text = "Что хочешь сделать?"
+    await update.callback_query.edit_message_text(text=new_message_text, reply_markup=reply_markup)
 
-    # await update.callback_query.message.reply_text()
-    # await update.message.reply_text(
-    #     reply_markup=ReplyKeyboardMarkup(
-    #         reply_keyboard, one_time_keyboard=True, resize_keyboard=True
-    #     ),
-    #     text="Что хочешь сделать?"
-    # )
     return PLAYER_ACTIONS
 
 
@@ -105,7 +90,7 @@ if __name__ == '__main__':
         set_bot_commands(application))
 
     selection_handlers = [
-        master_conversation_handler,
+        # master_conversation_handler,
         CallbackQueryHandler(handle_selection, pattern="^(master|player)$"),
 
         # MessageHandler(filters.Regex('^Мастер'), handle_selection),

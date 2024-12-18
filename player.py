@@ -13,6 +13,8 @@ player_selection, search_type, search_system, search_price = range(4)
 
 
 async def start_player_application(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    query.answer()
     print("start_player_conversation() called")
     context.user_data.clear()
     await update.message.reply_text(
@@ -283,8 +285,8 @@ async def cancel(update: Update, context: CallbackContext) -> int:
 
 
 player_application_conversation_handler = ConversationHandler(
-    entry_points=[MessageHandler(filters.Regex(
-        '^Заявка'), start_player_application)],
+    entry_points=[CallbackQueryHandler(
+        start_player_application, pattern="^search$",)],
     states={
         player_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_name)],
         contact: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_contact)],
