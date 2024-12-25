@@ -239,8 +239,6 @@ async def start_player_application(update: Update, context: CallbackContext) -> 
     context.user_data.clear()
     await update.callback_query.edit_message_text(text="Как тебя зовут?")
 
-
-
     return player_name
 
 
@@ -270,7 +268,6 @@ async def get_player_contact(update: Update, context: CallbackContext) -> None:
     ]
     reply_markup = InlineKeyboardMarkup(reply_keyboard)
 
-
     await update.message.reply_text(
         "Какой тип игры?",
         # in chat button
@@ -295,7 +292,7 @@ async def get_system_type(update: Update, context: CallbackContext) -> None:
 
     print(update.effective_message.text)
 
-    context.user_data["system"] = update.callback_query.data
+    context.user_data["system"] = update.effective_message.text
     await update.effective_message.reply_text(
         'В какое время тебе предпочтительнее?',
     )
@@ -379,14 +376,51 @@ async def start_player_search(update: Update, context: CallbackContext):
 
 
 async def get_player_selection(update: Update, context: CallbackContext):
-    print(update.effective_message.text)
 
-    if update.effective_message.text == "Покажи мне все игры":
+    query = update.callback_query
+# делает отдельные сообщения
+    if query.data == 'Покажи мне все игры':
+        # Предполагается, что это возвращает список строк
         list_player = get_game_announcement()
-        await update.effective_message.reply_text(
-            '\n\n'.join(list_player),
-        )
+    # Отправляем каждую строку как отдельное сообщение
+        for player in list_player:
+            await update.effective_message.reply_text(str(player))
+
         return ConversationHandler.END
+# разбивает на сообщения длинной 4096
+    # print(query.data)
+    # if query.data == 'Покажи мне все игры':
+    #     list_player = get_game_announcement()
+    #     message_text = '\n\n'.join(list_player)
+
+    #     MAX_MESSAGE_LENGTH = 4096
+    #     if len(message_text) > MAX_MESSAGE_LENGTH:
+    #         for i in range(0, len(message_text), MAX_MESSAGE_LENGTH):
+    #             await update.effective_message.reply_text(
+    #                 message_text[i:i+MAX_MESSAGE_LENGTH],
+    #             )
+    #     else:
+    #         await update.effective_message.reply_text(message_text)
+
+    #     return ConversationHandler.END
+
+# рабочий код но не работает если сообщение слишком длинное
+    # if query.data == 'Покажи мне все игры':
+    #     list_player = get_game_announcement()
+    #     await update.effective_message.reply_text(
+    #         '\n\n'.join(list_player),
+    #     )
+    #     return ConversationHandler.END
+
+    # print(update.effective_message.text)
+
+# старый код
+    # if update.effective_message.text == 'Покажи мне все игры':
+    #     list_player = get_game_announcement()
+    #     await update.effective_message.reply_text(
+    #         '\n\n'.join(list_player),
+    #     )
+    #     return ConversationHandler.END
     else:
         question_keyboard = [
             [
@@ -439,11 +473,9 @@ async def get_search_type(update: Update, context: CallbackContext) -> None:
 
     buttons = []
 
-
-
-
     for system in result:
-        button = InlineKeyboardButton(system[0], callback_data='system-'+system[0])
+        button = InlineKeyboardButton(
+            system[0], callback_data='system-'+system[0])
         buttons.append(button)
 
     print(buttons)
@@ -457,9 +489,8 @@ async def get_search_type(update: Update, context: CallbackContext) -> None:
 
 async def get_search_system(update: Update, context: CallbackContext) -> None:
     # print(update.effective_message.text)
-    context.user_data["game_system"] = player_choise_system = update.callback_query.data[len("system-"):]
-
-
+    context.user_data["game_system"] = player_choise_system = update.callback_query.data[len(
+        "system-"):]
 
     query = """
             SELECT DISTINCT cost FROM games WHERE game_type=? AND system=? ORDER BY cost ASC;
@@ -470,9 +501,9 @@ async def get_search_system(update: Update, context: CallbackContext) -> None:
 
     buttons = []
 
-
     for cost in result:
-        button = InlineKeyboardButton(cost[0], callback_data='cost-'+str(cost[0]))
+        button = InlineKeyboardButton(
+            cost[0], callback_data='cost-'+str(cost[0]))
         buttons.append(button)
 
     print(buttons)
