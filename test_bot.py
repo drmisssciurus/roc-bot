@@ -16,8 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, players_count, system, setting, game_type, time, cost, experience, free_text, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text = range(
-    20)
+state_0, state_1, master_id, players_count, system, setting, game_type, time, cost, experience, free_text, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
+    24)
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -228,7 +228,7 @@ async def second_selection(update: Update, context: CallbackContext):
     if update.callback_query.data == 'application':
         return await start_player_application(update, context)
     else:
-        return await handle_state_2_2(update, context)
+        return await start_player_search(update, context)
 
 
 async def start_player_application(update: Update, context: CallbackContext) -> None:
@@ -368,13 +368,138 @@ async def get_player_free_text(update: Update, context: CallbackContext) -> None
     return ConversationHandler.END
 
 
-async def handle_state_2_2(update: Update, context: CallbackContext):
-    print("state_2.2")
-    return state_2_2_1
+async def start_player_search(update: Update, context: CallbackContext):
+
+    print("start_search_conversation")
+    question_keyboard = [
+        [
+            InlineKeyboardButton('Покажи мне все игры',
+                                 callback_data='Покажи мне все игры'),
+            InlineKeyboardButton('Я хочу выбрать по фильтру',
+                                 callback_data='Я хочу выбрать по фильтру'),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(question_keyboard)
+    await update.effective_message.reply_text(
+        'Выбери вариант:',
+        reply_markup=reply_markup,
+    )
+    return player_selection
 
 
-async def handle_state_2_2_1(update: Update, context: CallbackContext):
-    print("state_2.2.1")
+async def get_player_selection(update: Update, context: CallbackContext):
+    print(update.effective_message.text)
+
+    if update.effective_message.text == "Покажи мне все игры":
+        list_player = get_game_announcement()
+        await update.effective_message.reply_text(
+            '\n\n'.join(list_player),
+        )
+        return ConversationHandler.END
+    else:
+        question_keyboard = [
+            [
+                InlineKeyboardButton('Ваншот', callback_data='Ваншот'),
+                InlineKeyboardButton('Кампания', callback_data='Кампания'),
+                InlineKeyboardButton('Модуль', callback_data='Модуль'),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(question_keyboard)
+        await update.effective_message.reply_text(
+            "Выбери тип игры:",
+            reply_markup=reply_markup,
+        )
+        return search_type
+
+
+def get_game_announcement() -> None:
+    # Query to get games of the selected type from the database
+    query = """
+            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games
+            """
+    # Execute a request with the selected game type parameter
+    result = db.execute_query(query)
+    list_player = []
+    # Generating a list of games to display to the user
+    for game in result:
+        temp_string = ''
+        for i, key in enumerate(keys_map):
+            temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+        list_player.append(temp_string)
+    print(result)
+    # Sending a list of available games to the user
+    # Ending the dialogue
+    return list_player
+
+
+async def get_search_type(update: Update, context: CallbackContext) -> None:
+    print(update.effective_message.text)
+    context.user_data["game_type"] = player_choise_type = update.effective_message.text
+    query = """
+            SELECT DISTINCT system FROM games WHERE game_type=?
+            """
+    result = db.execute_query(query, (player_choise_type,))
+
+    if not result:
+        await update.effective_message.reply_text(
+            "Ничего не найдено по указанным параметрам. Попробуйте изменить фильтр."
+        )
+        return ConversationHandler.END
+
+    buttons = []
+    for system in result:
+        buttons.append(system[0])
+    print(buttons)
+    question_keyboard = [buttons]
+    await update.effective_message.reply_text(
+        "Какая система?",
+        reply_markup=question_keyboard,
+    )
+    return search_system
+
+
+async def get_search_system(update: Update, context: CallbackContext) -> None:
+    print(update.effective_message.text)
+    context.user_data["game_system"] = player_choise_system = update.effective_message.text
+    query = """
+            SELECT DISTINCT cost FROM games WHERE game_type=? AND system=? ORDER BY cost ASC;
+            """
+    result = db.execute_query(
+        query, (context.user_data["game_type"], player_choise_system))
+    print(result)
+
+    buttons = []
+    for cost in result:
+        buttons.append(str(cost[0]))
+    print(buttons)
+    question_keyboard = [buttons]
+    await update.effective_message.reply_text(
+        "Какая стоимость?",
+        reply_markup=question_keyboard,
+    )
+    return search_price
+
+
+async def get_search_price(update: Update, context: CallbackContext) -> None:
+    print("get_search_price: " + update.effective_message.text)
+    player_choise_price = update.effective_message.text
+    query = """
+            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games WHERE game_type=? AND system=? AND cost=?;
+            """
+    result = db.execute_query(
+        query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
+    print(result)
+
+    list_player = []
+    for game in result:
+        temp_string = ''
+        for i, key in enumerate(keys_map):
+            temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+        list_player.append(temp_string)
+    print(result)
+    await update.effective_message.reply_text(
+        '\n\n'.join(list_player),
+    )
     return ConversationHandler.END
 
 
@@ -423,6 +548,11 @@ ta="module"),
             player_time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_time)],
             price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_price)],
             player_free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
+            player_selection: [CallbackQueryHandler(get_player_selection, pattern="^(Покажи мне все игры|Я хочу выбрать по фильтру)$")],
+            search_type: [CallbackQueryHandler(get_search_type, pattern="^(Ваншот|Кампания|Модуль)$")],
+            search_system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
+            search_price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
+
         },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
