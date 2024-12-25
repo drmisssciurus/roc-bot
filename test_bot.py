@@ -209,6 +209,7 @@ async def handle_state_1_2(update: Update, context: CallbackContext):
 
 async def choose_player_actions(update: Update, context: CallbackContext):
     print("player")
+
     reply_keyboard = [
         [
             InlineKeyboardButton("Поиск", callback_data="search"),
@@ -236,9 +237,9 @@ async def start_player_application(update: Update, context: CallbackContext) -> 
     query.answer()
     print("start_player_conversation() called")
     context.user_data.clear()
-    await update.effective_message.reply_text(
-        "Как тебя зовут?"
-    )
+    await update.callback_query.edit_message_text(text="Как тебя зовут?")
+
+
 
     return player_name
 
@@ -249,9 +250,8 @@ async def get_player_name(update: Update, context: CallbackContext) -> None:
     print(update.effective_message.text)
 
     context.user_data["player_name"] = update.effective_message.text
-    await update.effective_message.reply_text(
-        'Как с тобой связаться?',
-    )
+    # await update.callback_query.edit_message_text(text="Как с тобой связаться?")
+    await update.effective_message.reply_text(text="Как с тобой связаться?")
     return player_contact
 
 
@@ -269,21 +269,13 @@ async def get_player_contact(update: Update, context: CallbackContext) -> None:
         ]
     ]
     reply_markup = InlineKeyboardMarkup(reply_keyboard)
-    await update.effective_message.reply_text(
-        'Какой тип игры?',
+
+
+    await update.message.reply_text(
+        "Какой тип игры?",
+        # in chat button
         reply_markup=reply_markup,
     )
-
-    # context.user_data["contact"] = update.message.text
-    # question_keyboard = [
-    #     ['Ваншот', 'Кампания', 'Модуль']]
-    # await update.message.reply_text(
-    #     'Какой тип игры?',
-    #     reply_markup=ReplyKeyboardMarkup(
-    #         question_keyboard, one_time_keyboard=True, resize_keyboard=True
-    #     ),
-    # )
-
     return player_game_type
 
 
@@ -293,9 +285,8 @@ async def get_player_game_type(update: Update, context: CallbackContext) -> None
     print(update.effective_message.text)
 
     context.user_data["game_type"] = update.effective_message.text
-    await update.effective_message.reply_text(
-        'Какая система?',
-    )
+
+    await update.callback_query.edit_message_text(text='Какая система?')
     return system_type
 
 
@@ -304,7 +295,7 @@ async def get_system_type(update: Update, context: CallbackContext) -> None:
 
     print(update.effective_message.text)
 
-    context.user_data["system"] = update.effective_message.text
+    context.user_data["system"] = update.callback_query.data
     await update.effective_message.reply_text(
         'В какое время тебе предпочтительнее?',
     )
@@ -433,8 +424,8 @@ def get_game_announcement() -> None:
 
 
 async def get_search_type(update: Update, context: CallbackContext) -> None:
-    print(update.effective_message.text)
-    context.user_data["game_type"] = player_choise_type = update.effective_message.text
+    print(update.callback_query.data)
+    context.user_data["game_type"] = player_choise_type = update.callback_query.data
     query = """
             SELECT DISTINCT system FROM games WHERE game_type=?
             """
@@ -447,20 +438,29 @@ async def get_search_type(update: Update, context: CallbackContext) -> None:
         return ConversationHandler.END
 
     buttons = []
+
+
+
+
     for system in result:
-        buttons.append(system[0])
+        button = InlineKeyboardButton(system[0], callback_data='system-'+system[0])
+        buttons.append(button)
+
     print(buttons)
-    question_keyboard = [buttons]
+    reply_markup = InlineKeyboardMarkup([buttons])
     await update.effective_message.reply_text(
         "Какая система?",
-        reply_markup=question_keyboard,
+        reply_markup=reply_markup,
     )
     return search_system
 
 
 async def get_search_system(update: Update, context: CallbackContext) -> None:
-    print(update.effective_message.text)
-    context.user_data["game_system"] = player_choise_system = update.effective_message.text
+    # print(update.effective_message.text)
+    context.user_data["game_system"] = player_choise_system = update.callback_query.data[len("system-"):]
+
+
+
     query = """
             SELECT DISTINCT cost FROM games WHERE game_type=? AND system=? ORDER BY cost ASC;
             """
@@ -469,20 +469,25 @@ async def get_search_system(update: Update, context: CallbackContext) -> None:
     print(result)
 
     buttons = []
+
+
     for cost in result:
-        buttons.append(str(cost[0]))
+        button = InlineKeyboardButton(cost[0], callback_data='cost-'+str(cost[0]))
+        buttons.append(button)
+
     print(buttons)
-    question_keyboard = [buttons]
+    reply_markup = InlineKeyboardMarkup([buttons])
+
     await update.effective_message.reply_text(
         "Какая стоимость?",
-        reply_markup=question_keyboard,
+        reply_markup=reply_markup,
     )
     return search_price
 
 
 async def get_search_price(update: Update, context: CallbackContext) -> None:
-    print("get_search_price: " + update.effective_message.text)
-    player_choise_price = update.effective_message.text
+    # print("get_search_price: " + update.effective_message.text)
+    player_choise_price = update.callback_query.data[len("cost-"):]
     query = """
             SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games WHERE game_type=? AND system=? AND cost=?;
             """
@@ -550,10 +555,10 @@ ta="module"),
             player_free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
             player_selection: [CallbackQueryHandler(get_player_selection, pattern="^(Покажи мне все игры|Я хочу выбрать по фильтру)$")],
             search_type: [CallbackQueryHandler(get_search_type, pattern="^(Ваншот|Кампания|Модуль)$")],
-            search_system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
-            search_price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
+            search_system: [CallbackQueryHandler(get_search_system, pattern="^system-.*")],
+            search_price:  [CallbackQueryHandler(get_search_price, pattern="^cost-.*")],
 
-        },
+        },  # get_search_system
         fallbacks=[CommandHandler('cancel', cancel)]
     )
     application.add_handler(conv_handler)
