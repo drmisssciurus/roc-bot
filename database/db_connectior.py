@@ -11,6 +11,7 @@ keys_map = {
     'time': 'Время',
     'cost': 'Стоимость',
     'experience': 'Опыт игроков',
+    'image_uri': 'Картинка',
     'free_text': '\nОписание'
 }
 

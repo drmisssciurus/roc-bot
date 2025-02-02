@@ -16,8 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, players_count, system, setting, game_type, time, cost, experience, free_text, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-    24)
+state_0, state_1, master_id, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
+    25)
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -165,10 +165,21 @@ async def get_experience(update: Update, context: CallbackContext) -> None:
 
     context.user_data["experience"] = update.effective_message.text
     await update.effective_message.reply_text(
+        'Загрузи картинку если есть',
+    )
+    return upload_image
+
+
+async def get_image_from_master(update: Update, context: CallbackContext) -> None:
+    image = update.effective_message.photo[-1]
+    file = await context.bot.get_file(image.file_id)
+    await file.download_to_drive(f'./images/{image.file_id}.jpg')
+    # TODO REPLACE TO upload to drive (MAY BE)
+    context.user_data["image_uri"] = f'./images/{image.file_id}.jpg'
+    await update.effective_message.reply_text(
         'Напиши описание своего сеттинга если есть',
     )
     return free_text
-
 
 async def get_free_text(update: Update, context: CallbackContext) -> None:
     print(update.effective_message.text)
@@ -191,8 +202,8 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     await context.bot.send_message(chat_id, "Новый анонс получен:\n" + output_string)
     # Insert the data into the database
     query = f"""
-            INSERT INTO games (master_id,  players_count, system, setting, game_type, time, cost, experience, free_text)
-            VALUES (?,?,?,?,?,?,?,?,?)
+            INSERT INTO games (master_id,  players_count, system, setting, game_type, time, cost, experience, image_url, free_text)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
             """
     try:
         db.execute_query(query, tuple(context.user_data.values()))
@@ -544,6 +555,33 @@ async def cancel(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
+
+async def get_experience_with_image(update: Update, context: CallbackContext) -> None:
+    if update.effective_message.photo:
+        # Выбираем самое большое изображение (обычно последнее в списке)
+        photo = update.effective_message.photo[-1]
+        # Сохраняем file_id фотографии для дальнейшего использования
+        context.user_data["experience_image"] = photo.file_id
+        await update.effective_message.reply_text(
+            "Картинка получена! Теперь напиши описание своего сеттинга, если есть."
+        )
+        # Переход к следующему состоянию (например, ожидание свободного текста)
+        return free_text  # free_text – константа/метка для следующего шага диалога
+    else:
+        # Если фото не загружено, просим загрузить изображение
+        await update.effective_message.reply_text(
+            "Пожалуйста, загрузите картинку, используя функцию отправки фото."
+        )
+        # Можно вернуть текущий статус, чтобы бот продолжал ожидать загрузки картинки
+        return 'kkk'
+
+
+
+# async def load_image(update: Update, context: CallbackContext) -> None:
+#
+#     pass
+
+
 if __name__ == '__main__':
     application = Application.builder().token(
         '7530680667:AAFFJ6SxFOcji0z0Aug4xbNaPtzznJ-QSG8').build()
@@ -573,6 +611,7 @@ ta="module"),
             time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_time)],
             cost: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_cost)],
             experience: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_experience)],
+            upload_image: [MessageHandler(filters.PHOTO, get_image_from_master)],
             free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text)],
             # state_1_2: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_state_1_2)],
             player_actions: [CallbackQueryHandler(second_selection, pattern="^(search|application)$")],
@@ -593,5 +632,5 @@ ta="module"),
         fallbacks=[CommandHandler('cancel', cancel)]
     )
     application.add_handler(conv_handler)
-
+    # application.add_handler(MessageHandler(filters.PHOTO, load_image))
     application.run_polling()
