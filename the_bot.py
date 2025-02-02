@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 
@@ -175,11 +176,12 @@ async def get_image_from_master(update: Update, context: CallbackContext) -> Non
     file = await context.bot.get_file(image.file_id)
     await file.download_to_drive(f'./images/{image.file_id}.jpg')
     # TODO REPLACE TO upload to drive (MAY BE)
-    context.user_data["image_uri"] = f'./images/{image.file_id}.jpg'
+    context.user_data["image_url"] = f'./images/{image.file_id}.jpg'
     await update.effective_message.reply_text(
         'Напиши описание своего сеттинга если есть',
     )
     return free_text
+
 
 async def get_free_text(update: Update, context: CallbackContext) -> None:
     print(update.effective_message.text)
@@ -192,10 +194,12 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     # Prepare a summary of the collected data
     output_string = ''
     for key, value in context.user_data.items():  # ("key", "value")
-        output_string += keys_map[key] + ": " + value + '\n'
+        if key != 'image_url':
+            output_string += keys_map[key] + ": " + value + '\n'
+
     # Send the summary back to the master
-    await update.effective_message.reply_text(
-        output_string,
+    await update.effective_message.reply_photo(
+        caption=output_string, photo=context.user_data['image_url']
     )
 
     # Send message with summary to main resiever
@@ -395,8 +399,11 @@ async def get_player_selection(update: Update, context: CallbackContext):
         list_player = get_game_announcement()
     # Отправляем каждую строку как отдельное сообщение
         for player in list_player:
-            await update.effective_message.reply_text(str(player))
-
+            if player[1] is None:
+                await update.effective_message.reply_text(str(player[0]))
+            else:
+                await update.effective_message.reply_photo(caption=str(player[0]), photo=player[1])
+            await asyncio.sleep(0.5)
         return ConversationHandler.END
 # разбивает на сообщения длинной 4096
     # print(query.data)
@@ -451,7 +458,7 @@ async def get_player_selection(update: Update, context: CallbackContext):
 def get_game_announcement() -> None:
     # Query to get games of the selected type from the database
     query = """
-            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games
+            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, image_url, free_text FROM games
             """
     # Execute a request with the selected game type parameter
     result = db.execute_query(query)
@@ -460,8 +467,11 @@ def get_game_announcement() -> None:
     for game in result:
         temp_string = ''
         for i, key in enumerate(keys_map):
-            temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
-        list_player.append(temp_string)
+            if key != 'image_url':
+                temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+            else:
+                image_url = game[i]
+        list_player.append((temp_string, image_url))
     print(result)
     # Sending a list of available games to the user
     # Ending the dialogue
@@ -555,7 +565,6 @@ async def cancel(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-
 async def get_experience_with_image(update: Update, context: CallbackContext) -> None:
     if update.effective_message.photo:
         # Выбираем самое большое изображение (обычно последнее в списке)
@@ -574,7 +583,6 @@ async def get_experience_with_image(update: Update, context: CallbackContext) ->
         )
         # Можно вернуть текущий статус, чтобы бот продолжал ожидать загрузки картинки
         return 'kkk'
-
 
 
 # async def load_image(update: Update, context: CallbackContext) -> None:
