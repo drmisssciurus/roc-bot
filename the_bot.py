@@ -17,8 +17,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-    25) # TODO add new states: 1. Master branch, Game Name and more
+state_0, state_1, master_id, master_actions, master_select, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
+    25)  # TODO add new states: 1. Master branch, Game Name and more
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -75,13 +75,43 @@ async def get_master_id(update: Update, context: CallbackContext) -> None:
     await update.effective_message.reply_text(
         'Сколько игроков тебе нужно?',
     )
-    return players_count
+    return master_actions
 
 """ TODO: New branch
         1. First of all instead of requesting players count, ask what action is perform.
         2. if NEw game return players_count state. and go on
         3. Otherwise return <new_state>. then new conversation flow
 """
+
+
+async def get_master_actions(update: Update, context: CallbackContext) -> None:
+
+    print('get_master_branch clicked')
+    reply_keyboard = [
+        [
+            InlineKeyboardButton("Посмотреть свои заявка",
+                                 callback_data="master_applications"),
+            InlineKeyboardButton("Создать новую заявку",
+                                 callback_data="new_master_application"),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(reply_keyboard)
+    await update.message.reply_text(
+        'Выбери вариант:',
+        # in chat button
+        reply_markup=reply_markup,
+    )
+
+    return master_select
+
+
+async def get_master_select(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+    if query.data == 'master_applications':
+        pass  # watch all applications
+    elif query.data == 'new_master_application':
+        return players_count
 
 
 async def get_players_count(update: Update, context: CallbackContext) -> None:
