@@ -51,28 +51,21 @@ async def first_selection(update: Update, context: CallbackContext):
 async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Start the conversation by asking for the master's Telegram nickname
     context.user_data.clear()
-    masterID = str(update.callback_query.from_user.id)
-    print('masterID:' + masterID)
-    context.user_data["master_id"] = masterID
-    # await update.message.reply_text(
-    #     'Привет Мастер! Напиши свой никнейм в телеграмме с @?',
-    # )
+    master_id = str(update.callback_query.from_user.username)
+    print('masterID:' + master_id)
+    context.user_data["master_id"] = master_id
 
     print('get_master_branch clicked')
     reply_keyboard = [
         [
-            InlineKeyboardButton("Посмотреть свои заявка",
+            InlineKeyboardButton("Посмотреть свои заявки",
                                  callback_data="master_applications"),
             InlineKeyboardButton("Создать новую заявку",
                                  callback_data="new_master_application"),
         ]
     ]
     reply_markup = InlineKeyboardMarkup(reply_keyboard)
-    await update.message.reply_text(
-        f'Привет {masterID}! Что ты хочешь сделать?',
-        # in chat button
-        reply_markup=reply_markup,
-    )
+    await update.callback_query.edit_message_text(text=f'Привет {master_id}! Что ты хочешь сделать?', reply_markup=reply_markup)
 
     return master_select
 
@@ -125,11 +118,20 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
 
 
 async def get_master_select(update: Update, context: CallbackContext):
+    print('I am HERE')
     query = update.callback_query
     await query.answer()
     if query.data == 'master_applications':
-        pass  # watch all applications
+        # TODO: query database with username filter and display games as buttons
+        await update.callback_query.edit_message_text(text=
+            'Вот твои заявки!',
+        )
     elif query.data == 'new_master_application':
+        await update.callback_query.edit_message_text(text='Какое Название у твоей игры')
+        #
+        # await update.effective_message.reply_text(
+        #     'Какое Название у твоей игры',
+        # )
         return players_count
 
 
@@ -664,9 +666,11 @@ ta="module"),
         entry_points=[CommandHandler('start', start)],
         states={
             state_0: [CallbackQueryHandler(first_selection, pattern="^(master|player)$")],
-            state_1: [CallbackQueryHandler(first_selection, pattern="^master")],
+            state_1: [CallbackQueryHandler(first_selection, pattern="^master&")],
             # master_id: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_master_id)],
+            master_select: [CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application)$")],
             players_count: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_players_count)],
+            # players_count: [CallbackQueryHandler(get_players_count, pattern="^new_master_application$")],
             system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system)],
             setting: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_setting)],
             # game_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_type)],
