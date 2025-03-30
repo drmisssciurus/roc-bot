@@ -126,6 +126,7 @@ async def get_master_select(update: Update, context: CallbackContext):
         await update.callback_query.edit_message_text(text=
             'Вот твои заявки!',
         )
+        # TODO return new state
     elif query.data == 'new_master_application':
         await update.callback_query.edit_message_text(text='Какое Название у твоей игры')
         #
