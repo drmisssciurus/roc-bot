@@ -17,8 +17,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, master_actions, master_select, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-    27)  # TODO add new states: 1. Master branch, Game Name and more
+state_0, state_1, master_id, master_actions, master_select, game_edit, game_name, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
+    29)  # TODO add new states: 1. Master branch, Game Name and more
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -70,25 +70,6 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
     return master_select
 
 
-# async def get_master_id(update: Update, context: CallbackContext) -> None:
-#     # Retrieve and validate the master's nickname
-#     print(update.message.text)
-#     if not update.effective_message.text.startswith('@'):
-#         await update.effective_message.reply_text(
-#             'Неверное имя пользователя, начните писать с @',
-#         )
-#         return master_id
-#     if not re.match(r'^@[A-Za-z0-9_]{5,}$', update.effective_message.text):
-#         await update.effective_message.reply_text(
-#             'Неверное имя пользователя, используйте латиницу',
-#         )
-#         return master_id
-
-#     await update.effective_message.reply_text(
-#         'Сколько игроков тебе нужно?',
-#     )
-#     return master_actions
-
 """ TODO: New branch
         1. First of all instead of requesting players count, ask what action is perform.
         2. if NEw game return players_count state. and go on
@@ -96,44 +77,44 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
 """
 
 
-# async def get_master_actions(update: Update, context: CallbackContext) -> None:
-
-#     print('get_master_branch clicked')
-#     reply_keyboard = [
-#         [
-#             InlineKeyboardButton("Посмотреть свои заявка",
-#                                  callback_data="master_applications"),
-#             InlineKeyboardButton("Создать новую заявку",
-#                                  callback_data="new_master_application"),
-#         ]
-#     ]
-#     reply_markup = InlineKeyboardMarkup(reply_keyboard)
-#     await update.message.reply_text(
-#         'Выбери вариант:',
-#         # in chat button
-#         reply_markup=reply_markup,
-#     )
-
-#     return master_select
-
-
 async def get_master_select(update: Update, context: CallbackContext):
-    print('I am HERE')
+    print('I am in get_master_select')
     query = update.callback_query
     await query.answer()
+
     if query.data == 'master_applications':
-        # TODO: query database with username filter and display games as buttons
-        await update.callback_query.edit_message_text(text=
-            'Вот твои заявки!',
-        )
-        # TODO return new state
+        query = """
+                    SELECT game_name, game_id, players_count, system, setting, game_type, time, cost, experience, image_url, free_text FROM games
+                    WHERE master_id=?
+                    """
+        # Execute a request with the selected game type parameter
+        result = db.execute_query(query, (context.user_data["master_id"],))
+        context.user_data['games'] = result
+        buttons = []
+        # Generating a list of games to display to the user as buttons
+        for game in result:
+            button = InlineKeyboardButton(
+                game[0], callback_data='game-'+str(game[1]))
+            buttons.append(button)
+        reply_markup = InlineKeyboardMarkup([buttons])
+        await update.effective_message.reply_text('Вот твои заявки!', reply_markup=reply_markup)
+        return game_edit
     elif query.data == 'new_master_application':
         await update.callback_query.edit_message_text(text='Какое Название у твоей игры')
         #
         # await update.effective_message.reply_text(
         #     'Какое Название у твоей игры',
         # )
-        return players_count
+        return game_name
+
+
+async def get_game_name(update: Update, context: CallbackContext) -> None:
+    print('im in get_game_name')
+    context.user_data["game_name"] = update.effective_message.text
+    await update.effective_message.reply_text(
+        'Сколько игроков тебе нужно?',
+    )
+    return players_count
 
 
 async def get_players_count(update: Update, context: CallbackContext) -> None:
@@ -264,8 +245,8 @@ async def get_free_text(update: Update, context: CallbackContext) -> None:
     await context.bot.send_message(chat_id, "Новый анонс получен:\n" + output_string)
     # Insert the data into the database
     query = f"""
-            INSERT INTO games (master_id,  players_count, system, setting, game_type, time, cost, experience, image_url, free_text)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO games (master_id, game_name, players_count, system, setting, game_type, time, cost, experience, image_url, free_text)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
             """
     try:
         db.execute_query(query, tuple(context.user_data.values()))
@@ -670,6 +651,8 @@ ta="module"),
             state_1: [CallbackQueryHandler(first_selection, pattern="^master&")],
             # master_id: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_master_id)],
             master_select: [CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application)$")],
+            game_edit: [CallbackQueryHandler(get_master_select, pattern="ZHOPA")],
+            game_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_name)],
             players_count: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_players_count)],
             # players_count: [CallbackQueryHandler(get_players_count, pattern="^new_master_application$")],
             system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system)],

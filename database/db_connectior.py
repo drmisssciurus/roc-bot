@@ -4,6 +4,7 @@ import sqlite3
 
 keys_map = {
     'master_id': 'Никнейм мастера',
+    'game_name': 'Название игры',
     'players_count': 'Количество игроков',
     'system': 'Система',
     'setting': 'Сеттинг',
