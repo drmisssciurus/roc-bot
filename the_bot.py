@@ -116,6 +116,9 @@ async def get_game_name(update: Update, context: CallbackContext) -> None:
     )
     return players_count
 
+# TODO: паспечатать заявку полностью и кнопка с вопросом удалить(уверен что хочешь удалить) и
+# TODO: обновить заявку- обновление по пунктам заявки?
+
 
 async def get_players_count(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
