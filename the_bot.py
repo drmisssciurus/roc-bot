@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+from config import BOT_TOKEN
 
 from telegram import Update, ReplyKeyboardMarkup, BotCommand, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, CallbackContext, \
@@ -18,10 +19,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 state_0, state_1, master_id, master_actions, master_select, game_edit, game_name, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-    29)  # TODO add new states: 1. Master branch, Game Name and more
+    29)
 
 
-async def start(update: Update, context: CallbackContext) -> None:
+async def start(update: Update, context: CallbackContext) -> int:
     print('Start clicked')
     reply_keyboard = [
         [
@@ -48,7 +49,7 @@ async def first_selection(update: Update, context: CallbackContext):
         return await choose_player_actions(update, context)
 
 
-async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # Start the conversation by asking for the master's Telegram nickname
     context.user_data.clear()
     master_id = str(update.callback_query.from_user.username)
@@ -108,7 +109,7 @@ async def get_master_select(update: Update, context: CallbackContext):
         return game_name
 
 
-async def get_game_name(update: Update, context: CallbackContext) -> None:
+async def get_game_name(update: Update, context: CallbackContext) -> int:
     print('im in get_game_name')
     context.user_data["game_name"] = update.effective_message.text
     await update.effective_message.reply_text(
@@ -120,7 +121,7 @@ async def get_game_name(update: Update, context: CallbackContext) -> None:
 # TODO: обновить заявку- обновление по пунктам заявки?
 
 
-async def get_players_count(update: Update, context: CallbackContext) -> None:
+async def get_players_count(update: Update, context: CallbackContext) -> int:
     print(update.message.text)
 
     if not re.match(r'^\s*\d+(-\d+)?$', update.message.text):
@@ -137,7 +138,7 @@ async def get_players_count(update: Update, context: CallbackContext) -> None:
     return system
 
 
-async def get_system(update: Update, context: CallbackContext) -> None:
+async def get_system(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
     context.user_data["system"] = update.effective_message.text
@@ -147,14 +148,10 @@ async def get_system(update: Update, context: CallbackContext) -> None:
     return setting
 
 
-async def get_setting(update: Update, context: CallbackContext) -> None:
+async def get_setting(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
     context.user_data["setting"] = update.effective_message.text
-    # question_keyboard = [
-    #     ['Ваншот', 'Кампания', 'Модуль']]
-    #
-
     reply_keyboard = [
         [
             InlineKeyboardButton("Ваншот", callback_data="Ваншот"),
@@ -171,7 +168,7 @@ async def get_setting(update: Update, context: CallbackContext) -> None:
     return game_type
 
 
-async def get_game_type(update: Update, context: CallbackContext) -> None:
+async def get_game_type(update: Update, context: CallbackContext) -> int:
     # print(update.effective_message.text)
     query = update.callback_query
     await query.answer()
@@ -183,7 +180,7 @@ async def get_game_type(update: Update, context: CallbackContext) -> None:
     return time
 
 
-async def get_time(update: Update, context: CallbackContext) -> None:
+async def get_time(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
     context.user_data["time"] = update.effective_message.text
@@ -193,7 +190,7 @@ async def get_time(update: Update, context: CallbackContext) -> None:
     return cost
 
 
-async def get_cost(update: Update, context: CallbackContext) -> None:
+async def get_cost(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
     context.user_data["cost"] = update.effective_message.text
@@ -203,7 +200,7 @@ async def get_cost(update: Update, context: CallbackContext) -> None:
     return experience
 
 
-async def get_experience(update: Update, context: CallbackContext) -> None:
+async def get_experience(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
     context.user_data["experience"] = update.effective_message.text
@@ -213,11 +210,10 @@ async def get_experience(update: Update, context: CallbackContext) -> None:
     return upload_image
 
 
-async def get_image_from_master(update: Update, context: CallbackContext) -> None:
+async def get_image_from_master(update: Update, context: CallbackContext) -> int:
     image = update.effective_message.photo[-1]
     file = await context.bot.get_file(image.file_id)
     await file.download_to_drive(f'./images/{image.file_id}.jpg')
-    # TODO REPLACE TO upload to drive (MAY BE)
     context.user_data["image_url"] = f'./images/{image.file_id}.jpg'
     await update.effective_message.reply_text(
         'Напиши описание своего сеттинга если есть',
@@ -225,7 +221,7 @@ async def get_image_from_master(update: Update, context: CallbackContext) -> Non
     return free_text
 
 
-async def get_free_text(update: Update, context: CallbackContext) -> None:
+async def get_free_text(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
     context.user_data["free_text"] = update.effective_message.text
@@ -289,7 +285,7 @@ async def second_selection(update: Update, context: CallbackContext):
         return await start_player_search(update, context)
 
 
-async def start_player_application(update: Update, context: CallbackContext) -> None:
+async def start_player_application(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     print("start_player_conversation() called")
@@ -299,7 +295,7 @@ async def start_player_application(update: Update, context: CallbackContext) -> 
     return player_name
 
 
-async def get_player_name(update: Update, context: CallbackContext) -> None:
+async def get_player_name(update: Update, context: CallbackContext) -> int:
     print("get_player_name() called")
 
     print(update.effective_message.text)
@@ -310,7 +306,7 @@ async def get_player_name(update: Update, context: CallbackContext) -> None:
     return player_contact
 
 
-async def get_player_contact(update: Update, context: CallbackContext) -> None:
+async def get_player_contact(update: Update, context: CallbackContext) -> int:
     print("get_player_contact() called")
     print(update.effective_message.text)
 
@@ -333,7 +329,7 @@ async def get_player_contact(update: Update, context: CallbackContext) -> None:
     return player_game_type
 
 
-async def get_player_game_type(update: Update, context: CallbackContext) -> None:
+async def get_player_game_type(update: Update, context: CallbackContext) -> int:
     print("get_game_type() called")
 
     print(update.effective_message.text)
@@ -344,7 +340,7 @@ async def get_player_game_type(update: Update, context: CallbackContext) -> None
     return system_type
 
 
-async def get_system_type(update: Update, context: CallbackContext) -> None:
+async def get_system_type(update: Update, context: CallbackContext) -> int:
     print("get_system_type() called")
 
     print(update.effective_message.text)
@@ -356,7 +352,7 @@ async def get_system_type(update: Update, context: CallbackContext) -> None:
     return player_time
 
 
-async def get_player_time(update: Update, context: CallbackContext) -> None:
+async def get_player_time(update: Update, context: CallbackContext) -> int:
     print("get_time() called")
 
     print(update.effective_message.text)
@@ -368,7 +364,7 @@ async def get_player_time(update: Update, context: CallbackContext) -> None:
     return price
 
 
-async def get_price(update: Update, context: CallbackContext) -> None:
+async def get_price(update: Update, context: CallbackContext) -> int:
     print("get_price() called")
 
     print(update.effective_message.text)
@@ -380,7 +376,7 @@ async def get_price(update: Update, context: CallbackContext) -> None:
     return player_free_text
 
 
-async def get_player_free_text(update: Update, context: CallbackContext) -> None:
+async def get_player_free_text(update: Update, context: CallbackContext) -> int:
     print("get_free_text() called")
 
     print(update.effective_message.text)
@@ -413,7 +409,7 @@ async def get_player_free_text(update: Update, context: CallbackContext) -> None
     return ConversationHandler.END
 
 
-async def start_player_search(update: Update, context: CallbackContext):
+async def start_player_search(update: Update, context: CallbackContext) -> int:
 
     print("start_search_conversation")
     question_keyboard = [
@@ -432,7 +428,7 @@ async def start_player_search(update: Update, context: CallbackContext):
     return player_selection
 
 
-async def get_player_selection(update: Update, context: CallbackContext):
+async def get_player_selection(update: Update, context: CallbackContext) -> int:
 
     query = update.callback_query
 # делает отдельные сообщения
@@ -447,40 +443,6 @@ async def get_player_selection(update: Update, context: CallbackContext):
                 await update.effective_message.reply_photo(caption=str(player[0]), photo=player[1])
             await asyncio.sleep(0.5)
         return ConversationHandler.END
-# разбивает на сообщения длинной 4096
-    # print(query.data)
-    # if query.data == 'Покажи мне все игры':
-    #     list_player = get_game_announcement()
-    #     message_text = '\n\n'.join(list_player)
-
-    #     MAX_MESSAGE_LENGTH = 4096
-    #     if len(message_text) > MAX_MESSAGE_LENGTH:
-    #         for i in range(0, len(message_text), MAX_MESSAGE_LENGTH):
-    #             await update.effective_message.reply_text(
-    #                 message_text[i:i+MAX_MESSAGE_LENGTH],
-    #             )
-    #     else:
-    #         await update.effective_message.reply_text(message_text)
-
-    #     return ConversationHandler.END
-
-# рабочий код но не работает если сообщение слишком длинное
-    # if query.data == 'Покажи мне все игры':
-    #     list_player = get_game_announcement()
-    #     await update.effective_message.reply_text(
-    #         '\n\n'.join(list_player),
-    #     )
-    #     return ConversationHandler.END
-
-    # print(update.effective_message.text)
-
-# старый код
-    # if update.effective_message.text == 'Покажи мне все игры':
-    #     list_player = get_game_announcement()
-    #     await update.effective_message.reply_text(
-    #         '\n\n'.join(list_player),
-    #     )
-    #     return ConversationHandler.END
     else:
         question_keyboard = [
             [
@@ -497,7 +459,7 @@ async def get_player_selection(update: Update, context: CallbackContext):
         return search_type
 
 
-def get_game_announcement() -> None:
+def get_game_announcement() -> list:
     # Query to get games of the selected type from the database
     query = """
             SELECT master_id, players_count, system, setting, game_type, time, cost, experience, image_url, free_text FROM games
@@ -520,7 +482,7 @@ def get_game_announcement() -> None:
     return list_player
 
 
-async def get_search_type(update: Update, context: CallbackContext) -> None:
+async def get_search_type(update: Update, context: CallbackContext) -> int:
     print(update.callback_query.data)
     context.user_data["game_type"] = player_choise_type = update.callback_query.data
     query = """
@@ -550,7 +512,7 @@ async def get_search_type(update: Update, context: CallbackContext) -> None:
     return search_system
 
 
-async def get_search_system(update: Update, context: CallbackContext) -> None:
+async def get_search_system(update: Update, context: CallbackContext) -> int:
     # print(update.effective_message.text)
     context.user_data["game_system"] = player_choise_system = update.callback_query.data[len(
         "system-"):]
@@ -579,7 +541,7 @@ async def get_search_system(update: Update, context: CallbackContext) -> None:
     return search_price
 
 
-async def get_search_price(update: Update, context: CallbackContext) -> None:
+async def get_search_price(update: Update, context: CallbackContext) -> int:
     # print("get_search_price: " + update.effective_message.text)
     player_choise_price = update.callback_query.data[len("cost-"):]
     query = """
@@ -602,12 +564,13 @@ async def get_search_price(update: Update, context: CallbackContext) -> None:
     return ConversationHandler.END
 
 
-async def cancel(update: Update, context: CallbackContext):
+async def cancel(update: Update, context: CallbackContext) -> int:
     print("END")
     return ConversationHandler.END
 
 
-async def get_experience_with_image(update: Update, context: CallbackContext) -> None:
+async def get_experience_with_image(update: Update, context: CallbackContext) -> int:
+    # TODO: implement optional for user do not load the image
     if update.effective_message.photo:
         # Выбираем самое большое изображение (обычно последнее в списке)
         photo = update.effective_message.photo[-1]
@@ -627,47 +590,32 @@ async def get_experience_with_image(update: Update, context: CallbackContext) ->
         return 'kkk'
 
 
-# async def load_image(update: Update, context: CallbackContext) -> None:
-#
-#     pass
-
-
 if __name__ == '__main__':
     application = Application.builder().token(
-        '7530680667:AAFFJ6SxFOcji0z0Aug4xbNaPtzznJ-QSG8').build()
+        BOT_TOKEN).build()
 
-    # Установка постоянных кнопок
+    # Installation persistent buttons
     application.bot_data["on_startup"] = lambda: application.loop.create_task(
         set_bot_commands(application))
 
-    """
-    ta="oneshot"),
-data="campaign")
-ta="module"),
-    
-    """
     # Main conversation
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
             state_0: [CallbackQueryHandler(first_selection, pattern="^(master|player)$")],
             state_1: [CallbackQueryHandler(first_selection, pattern="^master&")],
-            # master_id: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_master_id)],
             master_select: [CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application)$")],
             game_edit: [CallbackQueryHandler(get_master_select, pattern="ZHOPA")],
             game_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_name)],
             players_count: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_players_count)],
-            # players_count: [CallbackQueryHandler(get_players_count, pattern="^new_master_application$")],
             system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system)],
             setting: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_setting)],
-            # game_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_type)],
             game_type: [CallbackQueryHandler(get_game_type, pattern="^(Ваншот|Кампания|Модуль)$")],
             time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_time)],
             cost: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_cost)],
             experience: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_experience)],
             upload_image: [MessageHandler(filters.PHOTO, get_image_from_master)],
             free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text)],
-            # state_1_2: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_state_1_2)],
             player_actions: [CallbackQueryHandler(second_selection, pattern="^(search|application)$")],
             player_application: [MessageHandler(filters.TEXT & ~filters.COMMAND, start_player_application)],
             player_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_name)],
@@ -681,10 +629,8 @@ ta="module"),
             search_type: [CallbackQueryHandler(get_search_type, pattern="^(Ваншот|Кампания|Модуль)$")],
             search_system: [CallbackQueryHandler(get_search_system, pattern="^system-.*")],
             search_price:  [CallbackQueryHandler(get_search_price, pattern="^cost-.*")],
-
-        },  # get_search_system
+        },
         fallbacks=[CommandHandler('cancel', cancel)]
     )
     application.add_handler(conv_handler)
-    # application.add_handler(MessageHandler(filters.PHOTO, load_image))
     application.run_polling()
