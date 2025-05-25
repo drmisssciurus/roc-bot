@@ -8,7 +8,7 @@ from conversation import start, state_0, state_1, master_select, game_edit, game
 	search_system, search_price, get_time, get_cost, get_experience, get_image_from_master, get_free_text, \
 	second_selection, start_player_application, get_player_name, get_player_contact, get_player_game_type, \
 	get_system_type, get_player_time, get_price, get_player_free_text, get_player_selection, get_search_type, \
-	get_search_system, get_search_price, cancel
+	get_search_system, get_search_price, cancel, show_master_select
 
 
 async def set_bot_commands(application: Application) -> None:
@@ -35,8 +35,9 @@ conv_handler = ConversationHandler(
 		state_1: [CallbackQueryHandler(first_selection, pattern="^master&")],
 		master_select: [
 			CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application)$")],
-		game_edit: [CallbackQueryHandler(get_master_select, pattern="ZHOPA")],
-		game_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_name)],
+		game_edit: [CallbackQueryHandler(show_master_select, pattern="^game")],
+		# game_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, show_master_select)],
+
 		players_count: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_players_count)],
 		system: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system)],
 		setting: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_setting)],

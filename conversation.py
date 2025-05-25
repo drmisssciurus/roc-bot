@@ -16,8 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, master_actions, master_select, game_edit, game_name, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-	29)
+state_0, state_1, master_id, master_actions, master_select, game_edit, game_name, game_display, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
+	30)
 
 
 async def start(update: Update, context: CallbackContext) -> int:
@@ -106,6 +106,34 @@ async def get_master_select(update: Update, context: CallbackContext):
 		#     'Какое Название у твоей игры',
 		# )
 		return game_name
+
+async def show_master_select(update: Update, context: CallbackContext):
+	print('I am in show_master_select')
+	query = update.callback_query
+	game = None
+	for item in context.user_data['games']:
+		if item[1] == int(query.data[5:]):
+			game = item
+			print(game)
+			break
+	temp_string = ''
+	image_url = None
+	for i, key in enumerate(keys_map):
+		if key != 'image_url':
+			temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+		else:
+			image_url = game[i]
+	reply_keyboard = [
+		[
+			InlineKeyboardButton("Внести изменения",
+								 callback_data="edit_game"),
+			InlineKeyboardButton("Выйти",
+								 callback_data="cancel_edit_game"),
+		]
+	]
+	reply_markup = InlineKeyboardMarkup(reply_keyboard)
+	await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
+	return game_display
 
 
 async def get_game_name(update: Update, context: CallbackContext) -> int:
