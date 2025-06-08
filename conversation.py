@@ -16,8 +16,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, master_actions, master_select, game_edit, game_name, game_display, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-	30)
+state_0, state_1, master_id, master_actions, master_select, game_edit, game_name, editing_loop, game_display, editing_iteration_input, editing_iteration_finish, end_editing, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
+	34)
 
 
 async def start(update: Update, context: CallbackContext) -> int:
@@ -110,6 +110,7 @@ async def get_master_select(update: Update, context: CallbackContext):
 async def show_master_select(update: Update, context: CallbackContext):
 	print('I am in show_master_select')
 	query = update.callback_query
+	context.user_data['game_to_edit'] = int(query.data[5:])
 	game = None
 	for item in context.user_data['games']:
 		if item[1] == int(query.data[5:]):
@@ -133,7 +134,36 @@ async def show_master_select(update: Update, context: CallbackContext):
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
 	await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
-	return game_display
+	return editing_loop
+
+async def master_edit_game(update: Update, context: CallbackContext):
+	print('I am in master_edit_game')
+	def build_keyboard(button, n_per_row=2):
+		return InlineKeyboardMarkup(
+			[button[i:i + n_per_row] for i in range(0, len(button), n_per_row)]
+		)
+	buttons = [InlineKeyboardButton(key[1], callback_data=key[0]) for key in keys_map.items() if key[0] != 'master_id']
+	reply_markup = build_keyboard(buttons)
+	await update.effective_message.reply_text('Что изменить?', reply_markup=reply_markup)
+	return editing_iteration_input
+
+async def edit_game(update: Update, context: CallbackContext):
+	print('I am in edit_game')
+	query = update.callback_query.data
+	await update.effective_message.reply_text('Введи новое значение:')
+	context.user_data['value_to_edit'] = query
+	return editing_iteration_finish
+
+async def master_new_data(update: Update, context: CallbackContext):
+	print('I am in master_new_data')
+	query = f"""
+    		UPDATE games
+    		SET {context.user_data['value_to_edit']} = ?
+    		WHERE game_id = ?;
+			"""
+	result = db.execute_query(query, (update.effective_message.text, context.user_data['game_to_edit']))
+	print(result)
+	return end_editing
 
 
 async def get_game_name(update: Update, context: CallbackContext) -> int:
