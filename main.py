@@ -10,7 +10,7 @@ from conversation import start, state_0, state_1, master_select, game_edit, game
 	get_system_type, get_player_time, get_price, get_player_free_text, get_player_selection, get_search_type, \
 	get_search_system, get_search_price, cancel, show_master_select
 
-
+#ddd
 async def set_bot_commands(application: Application) -> None:
 	"""Устанавливаем постоянные команды."""
 	commands = [
