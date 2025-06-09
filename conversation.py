@@ -84,12 +84,12 @@ async def get_master_select(update: Update, context: CallbackContext):
 
 	if query.data == 'master_applications':
 		query = """
-                    SELECT game_name, game_id, players_count, system, setting, game_type, time, cost, experience, image_url, free_text FROM games
-                    WHERE master_id=?
-                    """
+				SELECT game_name, game_id FROM games
+				WHERE master_id=?
+				"""
 		# Execute a request with the selected game type parameter
 		result = db.execute_query(query, (context.user_data["master_id"],))
-		context.user_data['games'] = result
+
 		buttons = []
 		# Generating a list of games to display to the user as buttons
 		for game in result:
@@ -107,16 +107,20 @@ async def get_master_select(update: Update, context: CallbackContext):
 		# )
 		return game_name
 
-async def show_master_select(update: Update, context: CallbackContext):
+async def show_master_select(update: Update, context: CallbackContext, game_id=None):
 	print('I am in show_master_select')
-	query = update.callback_query
-	context.user_data['game_to_edit'] = int(query.data[5:])
-	game = None
-	for item in context.user_data['games']:
-		if item[1] == int(query.data[5:]):
-			game = item
-			print(game)
-			break
+	if game_id is None:
+		query = update.callback_query
+		context.user_data['game_to_edit'] = int(query.data[5:])
+	else:
+		context.user_data['game_to_edit'] = game_id
+
+	query = """
+					SELECT game_name, game_id, players_count, system, setting, game_type, time, cost, experience, image_url, free_text FROM games
+					WHERE game_id=?
+					"""
+
+	game = db.execute_query(query, (context.user_data["game_to_edit"],))[0]
 	temp_string = ''
 	image_url = None
 	for i, key in enumerate(keys_map):
@@ -128,12 +132,17 @@ async def show_master_select(update: Update, context: CallbackContext):
 		[
 			InlineKeyboardButton("Внести изменения",
 								 callback_data="edit_game"),
+			InlineKeyboardButton("Удалить заявку",
+								 callback_data="delete_game"),
 			InlineKeyboardButton("Выйти",
 								 callback_data="cancel_edit_game"),
 		]
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
-	await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
+	if game_id is None:
+		await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
+	else:
+		await update.message.reply_text(temp_string, reply_markup=reply_markup)
 	return editing_loop
 
 async def master_edit_game(update: Update, context: CallbackContext):
@@ -150,7 +159,7 @@ async def master_edit_game(update: Update, context: CallbackContext):
 async def edit_game(update: Update, context: CallbackContext):
 	print('I am in edit_game')
 	query = update.callback_query.data
-	await update.effective_message.reply_text('Введи новое значение:')
+	await update.callback_query.edit_message_text('Введи новое значение:')
 	context.user_data['value_to_edit'] = query
 	return editing_iteration_finish
 
@@ -163,7 +172,21 @@ async def master_new_data(update: Update, context: CallbackContext):
 			"""
 	result = db.execute_query(query, (update.effective_message.text, context.user_data['game_to_edit']))
 	print(result)
-	return end_editing
+	return await show_master_select(update, context, context.user_data['game_to_edit'])
+
+async def exit_editing_loop(update: Update, context: CallbackContext):
+	print('I am in exit_editing_loop')
+	return await start_master_conversation(update, context)
+
+async def delete_game(update: Update, context: CallbackContext):
+	print('I am in delete_game')
+	query = f"""
+			DELETE FROM games
+			WHERE game_id = ?;
+			"""
+	result = db.execute_query(query, (context.user_data["game_to_edit"],))
+	await update.callback_query.edit_message_text('Ваша заявка удалена :(')
+	return await start_master_conversation(update, context)
 
 
 async def get_game_name(update: Update, context: CallbackContext) -> int:
