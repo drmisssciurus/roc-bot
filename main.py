@@ -1,15 +1,42 @@
 from telegram import BotCommand
 from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, CallbackQueryHandler
 from config import BOT_TOKEN
-from conversation import start, initial_state, master_selection, game_editing, master_input_game_name, master_input_players_count, master_input_system, master_input_setting, \
-	handle_role_selection, get_master_select, get_game_name_from_master, get_players_count_from_master, get_system_from_master, get_setting_from_master, get_game_type_from_master, \
-	master_input_game_type, master_input_time, master_input_cost, master_input_experience, master_input_image, master_input_free_text, player_actions, player_application, player_name, \
-	player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, \
-	search_system, search_price, get_time_from_master, get_cost_from_master, get_experience_from_master, get_image_from_master, get_free_text_from_master, \
-	second_selection, start_player_application, get_player_name, get_player_contact, get_player_game_type, \
-	get_system_type, get_player_time, get_price, get_player_free_text, get_player_selection, get_search_type, \
-	get_search_system, get_search_price, cancel, show_master_application, show_master_editing_options, editing_iteration_start, \
-	editing_iteration_input, handle_master_editing_option, editing_iteration_finish, get_new_value_from_master, exit_editing_loop, delete_game
+from conversation import (
+	start,
+	handle_role_selection,
+	get_master_select,
+	get_game_name_from_master,
+	get_players_count_from_master,
+	get_system_from_master,
+	get_setting_from_master,
+	get_game_type_from_master,
+	get_time_from_master,
+	get_cost_from_master,
+	get_experience_from_master,
+	get_image_from_master,
+	get_free_text_from_master,
+	handle_player_selection,
+	get_player_name,
+	get_contact_from_player,
+	get_game_type_from_player,
+	get_system_from_player,
+	get_time_from_player,
+	get_price_from_player,
+	get_free_text_from_player,
+	get_player_selection,
+	get_search_type,
+	get_search_system,
+	get_search_price,
+	cancel,
+	show_master_application,
+	show_master_editing_options,
+	handle_master_editing_option,
+	get_new_value_from_master,
+	exit_editing_loop,
+	delete_game
+)
+
+from states import *
 
 
 #ddd
@@ -56,21 +83,21 @@ conv_handler = ConversationHandler(
 		master_input_free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text_from_master)],
 
 		# Player
-		player_actions: [CallbackQueryHandler(second_selection, pattern="^(search|application)$")],
-		player_application: [MessageHandler(filters.TEXT & ~filters.COMMAND, start_player_application)],
-		player_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_name)],
-		player_contact: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_contact)],
-		player_game_type: [CallbackQueryHandler(get_player_game_type, pattern="^(Ваншот|Кампания|Модуль)$")],
-		system_type: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system_type)],
-		player_time: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_time)],
-		price: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_price)],
-		player_free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_free_text)],
+		player_selection: [CallbackQueryHandler(handle_player_selection, pattern="^(search|application)$")],
 
-		player_selection: [
+		player_name_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_name)],
+		player_contact_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_contact_from_player)],
+		player_game_type_input: [CallbackQueryHandler(get_game_type_from_player, pattern="^(Ваншот|Кампания|Модуль)$")],
+		players_system_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_system_from_player)],
+		player_time_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_time_from_player)],
+		player_price_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_price_from_player)],
+		player_free_text_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text_from_player)],
+
+		player_search: [
 			CallbackQueryHandler(get_player_selection, pattern="^(Покажи мне все игры|Я хочу выбрать по фильтру)$")],
-		search_type: [CallbackQueryHandler(get_search_type, pattern="^(Ваншот|Кампания|Модуль)$")],
-		search_system: [CallbackQueryHandler(get_search_system, pattern="^system-.*")],
-		search_price: [CallbackQueryHandler(get_search_price, pattern="^cost-.*")],
+		search_type_input: [CallbackQueryHandler(get_search_type, pattern="^(Ваншот|Кампания|Модуль)$")],
+		search_system_input: [CallbackQueryHandler(get_search_system, pattern="^system-.*")],
+		search_price_input: [CallbackQueryHandler(get_search_price, pattern="^cost-.*")],
 	},
 	fallbacks=[CommandHandler('cancel', cancel)]
 )

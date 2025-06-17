@@ -8,17 +8,14 @@ from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
 from database.db_connectior import keys_map, players_keys, db
 from config import CHAT_ID
 
-# from player import player_application_conversation_handler, player_search_conversation_handler
-
 # Включаем логирование
 logging.basicConfig(
 	format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-initial_state, master_selection, game_editing, master_input_game_name, editing_iteration_start, game_display, editing_iteration_input, editing_iteration_finish, end_editing, master_input_players_count, master_input_system, master_input_setting, master_input_game_type, master_input_time, master_input_cost, master_input_experience, master_input_free_text, master_input_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-	31)
 
+from states import *
 
 async def start(update: Update, context: CallbackContext) -> int:
 	"""Starts the conversation and asks the user if they are a master or a player.
@@ -55,7 +52,7 @@ async def handle_role_selection(update: Update, context: CallbackContext):
 	if query.data == 'master':
 		return await start_master_conversation(update, context)
 	elif query.data == 'player':
-		return await choose_player_actions(update, context)
+		return await start_player_conversation(update, context)
 
 
 async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -347,12 +344,7 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 	return ConversationHandler.END
 
 
-async def handle_state_1_2(update: Update, context: CallbackContext):
-	print('state_1_2')
-	return ConversationHandler.END
-
-
-async def choose_player_actions(update: Update, context: CallbackContext):
+async def start_player_conversation(update: Update, context: CallbackContext):
 	print("player")
 
 	reply_keyboard = [
@@ -366,10 +358,10 @@ async def choose_player_actions(update: Update, context: CallbackContext):
 	new_message_text = "Что хочешь сделать?"
 	await update.callback_query.edit_message_text(text=new_message_text, reply_markup=reply_markup)
 
-	return player_actions
+	return player_selection
 
 
-async def second_selection(update: Update, context: CallbackContext):
+async def handle_player_selection(update: Update, context: CallbackContext):
 	print("second_selection")
 	if update.callback_query.data == 'application':
 		return await start_player_application(update, context)
@@ -384,7 +376,7 @@ async def start_player_application(update: Update, context: CallbackContext) -> 
 	context.user_data.clear()
 	await update.callback_query.edit_message_text(text="Как тебя зовут?")
 
-	return player_name
+	return player_name_input
 
 
 async def get_player_name(update: Update, context: CallbackContext) -> int:
@@ -395,10 +387,10 @@ async def get_player_name(update: Update, context: CallbackContext) -> int:
 	context.user_data["player_name"] = update.effective_message.text
 	# await update.callback_query.edit_message_text(text="Как с тобой связаться?")
 	await update.effective_message.reply_text(text="Как с тобой связаться?")
-	return player_contact
+	return player_contact_input
 
 
-async def get_player_contact(update: Update, context: CallbackContext) -> int:
+async def get_contact_from_player(update: Update, context: CallbackContext) -> int:
 	print("get_player_contact() called")
 	print(update.effective_message.text)
 
@@ -418,10 +410,10 @@ async def get_player_contact(update: Update, context: CallbackContext) -> int:
 		# in chat button
 		reply_markup=reply_markup,
 	)
-	return player_game_type
+	return player_game_type_input
 
 
-async def get_player_game_type(update: Update, context: CallbackContext) -> int:
+async def get_game_type_from_player(update: Update, context: CallbackContext) -> int:
 	print("get_game_type() called")
 
 	print(update.effective_message.text)
@@ -429,10 +421,10 @@ async def get_player_game_type(update: Update, context: CallbackContext) -> int:
 	context.user_data["game_type"] = update.effective_message.text
 
 	await update.callback_query.edit_message_text(text='Какая система?')
-	return system_type
+	return players_system_input
 
 
-async def get_system_type(update: Update, context: CallbackContext) -> int:
+async def get_system_from_player(update: Update, context: CallbackContext) -> int:
 	print("get_system_type() called")
 
 	print(update.effective_message.text)
@@ -441,10 +433,10 @@ async def get_system_type(update: Update, context: CallbackContext) -> int:
 	await update.effective_message.reply_text(
 		'В какое время тебе предпочтительнее?',
 	)
-	return player_time
+	return player_time_input
 
 
-async def get_player_time(update: Update, context: CallbackContext) -> int:
+async def get_time_from_player(update: Update, context: CallbackContext) -> int:
 	print("get_time() called")
 
 	print(update.effective_message.text)
@@ -453,10 +445,10 @@ async def get_player_time(update: Update, context: CallbackContext) -> int:
 	await update.effective_message.reply_text(
 		'Если есть предпочтения по цене напиши',
 	)
-	return price
+	return player_price_input
 
 
-async def get_price(update: Update, context: CallbackContext) -> int:
+async def get_price_from_player(update: Update, context: CallbackContext) -> int:
 	print("get_price() called")
 
 	print(update.effective_message.text)
@@ -465,10 +457,10 @@ async def get_price(update: Update, context: CallbackContext) -> int:
 	await update.effective_message.reply_text(
 		'Если есть какие-то пожелания, напиши',
 	)
-	return player_free_text
+	return player_free_text_input
 
 
-async def get_player_free_text(update: Update, context: CallbackContext) -> int:
+async def get_free_text_from_player(update: Update, context: CallbackContext) -> int:
 	print("get_free_text() called")
 
 	print(update.effective_message.text)
@@ -517,7 +509,7 @@ async def start_player_search(update: Update, context: CallbackContext) -> int:
 		'Выбери вариант:',
 		reply_markup=reply_markup,
 	)
-	return player_selection
+	return player_search
 
 
 async def get_player_selection(update: Update, context: CallbackContext) -> int:
@@ -548,7 +540,7 @@ async def get_player_selection(update: Update, context: CallbackContext) -> int:
 			"Выбери тип игры:",
 			reply_markup=reply_markup,
 		)
-		return search_type
+		return search_type_input
 
 
 def get_game_announcement() -> list:
@@ -601,7 +593,7 @@ async def get_search_type(update: Update, context: CallbackContext) -> int:
 		"Какая система?",
 		reply_markup=reply_markup,
 	)
-	return search_system
+	return search_system_input
 
 
 async def get_search_system(update: Update, context: CallbackContext) -> int:
@@ -630,7 +622,7 @@ async def get_search_system(update: Update, context: CallbackContext) -> int:
 		"Какая стоимость?",
 		reply_markup=reply_markup,
 	)
-	return search_price
+	return search_price_input
 
 
 async def get_search_price(update: Update, context: CallbackContext) -> int:
@@ -661,22 +653,3 @@ async def cancel(update: Update, context: CallbackContext) -> int:
 	return ConversationHandler.END
 
 
-async def get_experience_with_image(update: Update, context: CallbackContext) -> int:
-	# TODO: implement optional for user do not load the image
-	if update.effective_message.photo:
-		# Выбираем самое большое изображение (обычно последнее в списке)
-		photo = update.effective_message.photo[-1]
-		# Сохраняем file_id фотографии для дальнейшего использования
-		context.user_data["experience_image"] = photo.file_id
-		await update.effective_message.reply_text(
-			"Картинка получена! Теперь напиши описание своего сеттинга, если есть."
-		)
-		# Переход к следующему состоянию (например, ожидание свободного текста)
-		return master_input_free_text  # free_text – константа/метка для следующего шага диалога
-	else:
-		# Если фото не загружено, просим загрузить изображение
-		await update.effective_message.reply_text(
-			"Пожалуйста, загрузите картинку, используя функцию отправки фото."
-		)
-		# Можно вернуть текущий статус, чтобы бот продолжал ожидать загрузки картинки
-		return 'kkk'
