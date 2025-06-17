@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from telegram import InlineKeyboardButton
-from conversation import start, state_0
+from conversation import start, initial_state
 
 
 @pytest.mark.asyncio
@@ -20,7 +20,7 @@ async def test_start_successful_reply():
 	assert args[0] == 'Выбери кто ты?'
 
 
-	assert result_state == state_0
+	assert result_state == initial_state
 
 
 @pytest.mark.asyncio

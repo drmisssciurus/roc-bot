@@ -16,12 +16,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-state_0, state_1, master_id, master_actions, master_select, game_edit, game_name, editing_loop, game_display, editing_iteration_input, editing_iteration_finish, end_editing, players_count, system, setting, game_type, time, cost, experience, free_text, upload_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
-	34)
+initial_state, master_selection, game_editing, master_input_game_name, editing_iteration_start, game_display, editing_iteration_input, editing_iteration_finish, end_editing, master_input_players_count, master_input_system, master_input_setting, master_input_game_type, master_input_time, master_input_cost, master_input_experience, master_input_free_text, master_input_image, player_actions, player_application, player_name, player_contact, player_game_type, system_type, player_time, price, player_free_text, player_selection, search_type, search_system, search_price = range(
+	31)
 
 
 async def start(update: Update, context: CallbackContext) -> int:
+	"""Starts the conversation and asks the user if they are a master or a player.
+
+	Args:
+		update: The Telegram Update object.
+		context: The CallbackContext object.
+
+	Returns:
+		The next state of the conversation (initial_state).
+
+	"""
 	print('Start clicked')  # TODO Restart logic
+	logger.info('start function called')
 	reply_keyboard = [
 		[
 			InlineKeyboardButton("Мастер", callback_data="master"),
@@ -34,10 +45,10 @@ async def start(update: Update, context: CallbackContext) -> int:
 		# in chat button
 		reply_markup=reply_markup,
 	)
-	return state_0
+	return initial_state
 
 
-async def first_selection(update: Update, context: CallbackContext):
+async def handle_role_selection(update: Update, context: CallbackContext):
 	print("first_selection")
 	query = update.callback_query
 	await query.answer()
@@ -48,7 +59,6 @@ async def first_selection(update: Update, context: CallbackContext):
 
 
 async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-	# Start the conversation by asking for the master's Telegram nickname
 	context.user_data.clear()
 	master_id = str(update.callback_query.from_user.username)
 	print('masterID:' + master_id)
@@ -66,8 +76,7 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
 	await update.callback_query.edit_message_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
 												  reply_markup=reply_markup)
-
-	return master_select
+	return master_selection
 
 
 """ TODO: New branch
@@ -98,16 +107,13 @@ async def get_master_select(update: Update, context: CallbackContext):
 			buttons.append(button)
 		reply_markup = InlineKeyboardMarkup([buttons])
 		await update.effective_message.reply_text('Вот твои заявки!', reply_markup=reply_markup)
-		return game_edit
+		return game_editing
 	elif query.data == 'new_master_application':
 		await update.callback_query.edit_message_text(text='Какое Название у твоей игры')
-		#
-		# await update.effective_message.reply_text(
-		#     'Какое Название у твоей игры',
-		# )
-		return game_name
+		return master_input_game_name
 
-async def show_master_select(update: Update, context: CallbackContext, game_id=None):
+
+async def show_master_application(update: Update, context: CallbackContext, game_id=None):
 	print('I am in show_master_select')
 	if game_id is None:
 		query = update.callback_query
@@ -143,28 +149,34 @@ async def show_master_select(update: Update, context: CallbackContext, game_id=N
 		await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
 	else:
 		await update.message.reply_text(temp_string, reply_markup=reply_markup)
-	return editing_loop
+	return editing_iteration_start
 
-async def master_edit_game(update: Update, context: CallbackContext):
+
+async def show_master_editing_options(update: Update, context: CallbackContext):
 	print('I am in master_edit_game')
+
 	def build_keyboard(button, n_per_row=2):
 		return InlineKeyboardMarkup(
 			[button[i:i + n_per_row] for i in range(0, len(button), n_per_row)]
 		)
+
 	buttons = [InlineKeyboardButton(key[1], callback_data=key[0]) for key in keys_map.items() if key[0] != 'master_id']
 	reply_markup = build_keyboard(buttons)
 	await update.effective_message.reply_text('Что изменить?', reply_markup=reply_markup)
 	return editing_iteration_input
 
-async def edit_game(update: Update, context: CallbackContext):
+
+async def handle_master_editing_option(update: Update, context: CallbackContext):
 	print('I am in edit_game')
 	query = update.callback_query.data
 	await update.callback_query.edit_message_text('Введи новое значение:')
 	context.user_data['value_to_edit'] = query
 	return editing_iteration_finish
 
-async def master_new_data(update: Update, context: CallbackContext):
+
+async def get_new_value_from_master(update: Update, context: CallbackContext):
 	print('I am in master_new_data')
+	# TODO check input for all options
 	query = f"""
     		UPDATE games
     		SET {context.user_data['value_to_edit']} = ?
@@ -172,11 +184,14 @@ async def master_new_data(update: Update, context: CallbackContext):
 			"""
 	result = db.execute_query(query, (update.effective_message.text, context.user_data['game_to_edit']))
 	print(result)
-	return await show_master_select(update, context, context.user_data['game_to_edit'])
+	return await show_master_application(update, context, context.user_data['game_to_edit'])
+
 
 async def exit_editing_loop(update: Update, context: CallbackContext):
 	print('I am in exit_editing_loop')
+	await update.callback_query.edit_message_text('Вы закончили редактирование!')
 	return await start_master_conversation(update, context)
+
 
 async def delete_game(update: Update, context: CallbackContext):
 	print('I am in delete_game')
@@ -189,47 +204,43 @@ async def delete_game(update: Update, context: CallbackContext):
 	return await start_master_conversation(update, context)
 
 
-async def get_game_name(update: Update, context: CallbackContext) -> int:
+async def get_game_name_from_master(update: Update, context: CallbackContext) -> int:
 	print('im in get_game_name')
 	context.user_data["game_name"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'Сколько игроков тебе нужно?',
 	)
-	return players_count
+	return master_input_players_count
 
 
-# TODO: паспечатать заявку полностью и кнопка с вопросом удалить(уверен что хочешь удалить) и
-# TODO: обновить заявку- обновление по пунктам заявки?
-
-
-async def get_players_count(update: Update, context: CallbackContext) -> int:
+async def get_players_count_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.message.text)
 
 	if not re.match(r'^\s*\d+(-\d+)?$', update.message.text):
 		await update.effective_message.reply_text(
 			'Только цифры, например 4-5 и тд.',
 		)
-		return players_count
+		return master_input_players_count
 	# Save the players_count
 	context.user_data["players_count"] = update.effective_message.text
 
 	await update.effective_message.reply_text(
 		'Какая у тебя система?',
 	)
-	return system
+	return master_input_system
 
 
-async def get_system(update: Update, context: CallbackContext) -> int:
+async def get_system_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
 	context.user_data["system"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'Какой у тебя сеттинг?',
 	)
-	return setting
+	return master_input_setting
 
 
-async def get_setting(update: Update, context: CallbackContext) -> int:
+async def get_setting_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
 	context.user_data["setting"] = update.effective_message.text
@@ -246,10 +257,10 @@ async def get_setting(update: Update, context: CallbackContext) -> int:
 		reply_markup=reply_markup,
 	)
 
-	return game_type
+	return master_input_game_type
 
 
-async def get_game_type(update: Update, context: CallbackContext) -> int:
+async def get_game_type_from_master(update: Update, context: CallbackContext) -> int:
 	# print(update.effective_message.text)
 	query = update.callback_query
 	await query.answer()
@@ -258,37 +269,37 @@ async def get_game_type(update: Update, context: CallbackContext) -> int:
 	await update.effective_message.reply_text(
 		'Выбери время и место (дату напиши в формате ДД.ММ.ГГ)',
 	)
-	return time
+	return master_input_time
 
 
-async def get_time(update: Update, context: CallbackContext) -> int:
+async def get_time_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
 	context.user_data["time"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'Выбери стоимость своей игры',
 	)
-	return cost
+	return master_input_cost
 
 
-async def get_cost(update: Update, context: CallbackContext) -> int:
+async def get_cost_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
 	context.user_data["cost"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'Важен ли тебе опыт игроков',
 	)
-	return experience
+	return master_input_experience
 
 
-async def get_experience(update: Update, context: CallbackContext) -> int:
+async def get_experience_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
 	context.user_data["experience"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'Загрузи картинку если есть',
 	)
-	return upload_image
+	return master_input_image
 
 
 async def get_image_from_master(update: Update, context: CallbackContext) -> int:
@@ -299,10 +310,10 @@ async def get_image_from_master(update: Update, context: CallbackContext) -> int
 	await update.effective_message.reply_text(
 		'Напиши описание своего сеттинга если есть',
 	)
-	return free_text
+	return master_input_free_text
 
 
-async def get_free_text(update: Update, context: CallbackContext) -> int:
+async def get_free_text_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
 	context.user_data["free_text"] = update.effective_message.text
@@ -661,7 +672,7 @@ async def get_experience_with_image(update: Update, context: CallbackContext) ->
 			"Картинка получена! Теперь напиши описание своего сеттинга, если есть."
 		)
 		# Переход к следующему состоянию (например, ожидание свободного текста)
-		return free_text  # free_text – константа/метка для следующего шага диалога
+		return master_input_free_text  # free_text – константа/метка для следующего шага диалога
 	else:
 		# Если фото не загружено, просим загрузить изображение
 		await update.effective_message.reply_text(
