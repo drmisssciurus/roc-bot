@@ -12,8 +12,8 @@ keys_map = {
     'time': 'Время',
     'cost': 'Стоимость',
     'experience': 'Опыт игроков',
+    'free_text': '\nОписание',
     'image_url': 'Картинка',
-    'free_text': '\nОписание'
 }
 
 players_keys = {

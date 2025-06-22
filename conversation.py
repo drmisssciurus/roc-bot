@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+import time
 
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
@@ -55,7 +56,7 @@ async def handle_role_selection(update: Update, context: CallbackContext):
 		return await start_player_conversation(update, context)
 
 
-async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE, is_first_time=True) -> int:
 	context.user_data.clear()
 	master_id = str(update.callback_query.from_user.username)
 	print('masterID:' + master_id)
@@ -71,7 +72,13 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
 		]
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
-	await update.callback_query.edit_message_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
+	# await update.effective_message.edit_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
+	# 											  reply_markup=reply_markup)
+	if is_first_time:
+		await update.effective_message.edit_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
+												  reply_markup=reply_markup)
+	else:
+		await update.effective_message.reply_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
 												  reply_markup=reply_markup)
 	return master_selection
 
@@ -87,7 +94,7 @@ async def get_master_select(update: Update, context: CallbackContext):
 	print('I am in get_master_select')
 	query = update.callback_query
 	await query.answer()
-
+	context.user_data["master_id"] = 'DrMisssciurus' # TODO remove
 	if query.data == 'master_applications':
 		query = """
 				SELECT game_name, game_id FROM games
@@ -103,7 +110,7 @@ async def get_master_select(update: Update, context: CallbackContext):
 				game[0], callback_data='game-' + str(game[1]))
 			buttons.append(button)
 		reply_markup = InlineKeyboardMarkup([buttons])
-		await update.effective_message.reply_text('Вот твои заявки!', reply_markup=reply_markup)
+		await update.callback_query.edit_message_text('Вот твои заявки!', reply_markup=reply_markup)
 		return game_editing
 	elif query.data == 'new_master_application':
 		await update.callback_query.edit_message_text(text='Какое Название у твоей игры')
@@ -119,18 +126,36 @@ async def show_master_application(update: Update, context: CallbackContext, game
 		context.user_data['game_to_edit'] = game_id
 
 	query = """
-					SELECT game_name, game_id, players_count, system, setting, game_type, time, cost, experience, image_url, free_text FROM games
+					SELECT
+						game_name,
+						players_count,
+						system,
+						setting,
+						game_type,
+						time,
+						cost,
+						experience,
+						free_text,
+						image_url 
+					FROM games
 					WHERE game_id=?
 					"""
 
 	game = db.execute_query(query, (context.user_data["game_to_edit"],))[0]
-	temp_string = ''
+
+	keys = keys_map.copy()
+	keys.pop('master_id')
 	image_url = None
-	for i, key in enumerate(keys_map):
+	temp_string = ''
+	for i, key in enumerate(keys):
 		if key != 'image_url':
 			temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
 		else:
 			image_url = game[i]
+
+
+
+	time.sleep(1)
 	reply_keyboard = [
 		[
 			InlineKeyboardButton("Внести изменения",
@@ -142,10 +167,19 @@ async def show_master_application(update: Update, context: CallbackContext, game
 		]
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
-	if game_id is None:
-		await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
+	# if game_id is None:
+	# 	await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
+	#
+	#
+	# else:
+	await update.effective_message.delete()
+	if image_url:
+
+		await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url, reply_markup=reply_markup)
 	else:
-		await update.message.reply_text(temp_string, reply_markup=reply_markup)
+
+		await update.effective_message.reply_text(temp_string, reply_markup=reply_markup)
+	# await update.message.reply_text(temp_string, reply_markup=reply_markup)
 	return editing_iteration_start
 
 
@@ -186,8 +220,8 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
 
 async def exit_editing_loop(update: Update, context: CallbackContext):
 	print('I am in exit_editing_loop')
-	await update.callback_query.edit_message_text('Вы закончили редактирование!')
-	return await start_master_conversation(update, context)
+	await update.effective_message.reply_text('Вы закончили редактирование!')
+	return await start_master_conversation(update, context, False)
 
 
 async def delete_game(update: Update, context: CallbackContext):
@@ -629,27 +663,45 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
 	# print("get_search_price: " + update.effective_message.text)
 	player_choise_price = update.callback_query.data[len("cost-"):]
 	query = """
-            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, free_text FROM games WHERE game_type=? AND system=? AND cost=?;
+            SELECT 
+            		master_id,
+            		game_name,
+            		players_count,
+            		system,
+            		setting,
+            		game_type,
+            		time,
+            		cost,
+            		experience,
+            		free_text,
+            		image_url 
+            FROM games 
+            WHERE game_type=? AND system=? AND cost=?;
             """
 	result = db.execute_query(
 		query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
-	print(result)
 
-	list_player = []
+
+
 	for game in result:
+		image_url = None
 		temp_string = ''
 		for i, key in enumerate(keys_map):
-			temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
-		list_player.append(temp_string)
-	print(result)
-	await update.effective_message.reply_text(
-		'\n\n'.join(list_player),
-	)
+			if key != 'image_url':
+				temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+			else:
+				image_url = game[i]
+		if image_url:
+			await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url)
+		else:
+			await update.effective_message.reply_text(temp_string)
+
 	return ConversationHandler.END
 
 
 async def cancel(update: Update, context: CallbackContext) -> int:
 	print("END")
+	await update.effective_message.reply_text('Пока!')
 	return ConversationHandler.END
 
 
