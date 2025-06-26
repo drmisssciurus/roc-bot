@@ -18,6 +18,12 @@ logger = logging.getLogger(__name__)
 
 from states import *
 
+
+def build_keyboard(button, n_per_row=2):
+	return InlineKeyboardMarkup(
+		[button[i:i + n_per_row] for i in range(0, len(button), n_per_row)]
+	)
+
 async def start(update: Update, context: CallbackContext) -> int:
 	"""Starts the conversation and asks the user if they are a master or a player.
 
@@ -94,7 +100,7 @@ async def get_master_select(update: Update, context: CallbackContext):
 	print('I am in get_master_select')
 	query = update.callback_query
 	await query.answer()
-	context.user_data["master_id"] = 'DrMisssciurus' # TODO remove
+
 	if query.data == 'master_applications':
 		query = """
 				SELECT game_name, game_id FROM games
@@ -105,11 +111,13 @@ async def get_master_select(update: Update, context: CallbackContext):
 
 		buttons = []
 		# Generating a list of games to display to the user as buttons
+
 		for game in result:
 			button = InlineKeyboardButton(
 				game[0], callback_data='game-' + str(game[1]))
 			buttons.append(button)
-		reply_markup = InlineKeyboardMarkup([buttons])
+		reply_markup = build_keyboard(buttons, n_per_row=1)
+		# reply_markup = InlineKeyboardMarkup([buttons])
 		await update.callback_query.edit_message_text('Вот твои заявки!', reply_markup=reply_markup)
 		return game_editing
 	elif query.data == 'new_master_application':
@@ -167,11 +175,7 @@ async def show_master_application(update: Update, context: CallbackContext, game
 		]
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
-	# if game_id is None:
-	# 	await update.callback_query.edit_message_text(text=temp_string, reply_markup=reply_markup)
-	#
-	#
-	# else:
+
 	await update.effective_message.delete()
 	if image_url:
 
@@ -179,17 +183,14 @@ async def show_master_application(update: Update, context: CallbackContext, game
 	else:
 
 		await update.effective_message.reply_text(temp_string, reply_markup=reply_markup)
-	# await update.message.reply_text(temp_string, reply_markup=reply_markup)
+
 	return editing_iteration_start
 
 
 async def show_master_editing_options(update: Update, context: CallbackContext):
 	print('I am in master_edit_game')
 
-	def build_keyboard(button, n_per_row=2):
-		return InlineKeyboardMarkup(
-			[button[i:i + n_per_row] for i in range(0, len(button), n_per_row)]
-		)
+
 
 	buttons = [InlineKeyboardButton(key[1], callback_data=key[0]) for key in keys_map.items() if key[0] != 'master_id']
 	reply_markup = build_keyboard(buttons)
@@ -328,7 +329,7 @@ async def get_experience_from_master(update: Update, context: CallbackContext) -
 
 	context.user_data["experience"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Загрузи картинку если есть',
+		'Загрузи картинку (Обязательно)',
 	)
 	return master_input_image
 
@@ -354,9 +355,12 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 
 	# Prepare a summary of the collected data
 	output_string = ''
-	for key, value in context.user_data.items():  # ("key", "value")
+	for key, value in context.user_data.items():
 		if key != 'image_url':
-			output_string += keys_map[key] + ": " + value + '\n'
+			if key == 'master_id':
+				output_string += keys_map[key] + ': ' + '@' + str(value) + '\n'
+			else:
+				output_string += keys_map[key] + ": " + value + '\n'
 
 	# Send the summary back to the master
 	await update.effective_message.reply_photo(
@@ -364,7 +368,7 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 	)
 
 	# Send message with summary to main resiever
-	await context.bot.send_message(CHAT_ID, "Новый анонс получен:\n" + output_string)
+	await context.bot.send_photo(CHAT_ID, photo=context.user_data['image_url'], caption="Новый анонс получен:\n" + output_string)
 	# Insert the data into the database
 	query = f"""
             INSERT INTO games (master_id, game_name, players_count, system, setting, game_type, time, cost, experience, image_url, free_text)
@@ -580,7 +584,7 @@ async def get_player_selection(update: Update, context: CallbackContext) -> int:
 def get_game_announcement() -> list:
 	# Query to get games of the selected type from the database
 	query = """
-            SELECT master_id, players_count, system, setting, game_type, time, cost, experience, image_url, free_text FROM games
+            SELECT master_id, game_name, players_count, system, setting, game_type, time, cost, experience, free_text, image_url FROM games
             """
 	# Execute a request with the selected game type parameter
 	result = db.execute_query(query)
@@ -589,8 +593,12 @@ def get_game_announcement() -> list:
 	for game in result:
 		temp_string = ''
 		for i, key in enumerate(keys_map):
+
 			if key != 'image_url':
-				temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+				if key == 'master_id':
+					temp_string += keys_map[key] + ': ' + '@' + str(game[i]) + '\n'
+				else:
+					temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
 			else:
 				image_url = game[i]
 		list_player.append((temp_string, image_url))
