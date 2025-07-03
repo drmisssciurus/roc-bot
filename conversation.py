@@ -15,7 +15,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 from states import *
 
 
@@ -24,33 +23,27 @@ def build_keyboard(button, n_per_row=2):
 		[button[i:i + n_per_row] for i in range(0, len(button), n_per_row)]
 	)
 
+
 async def start(update: Update, context: CallbackContext) -> int:
-	"""Starts the conversation and asks the user if they are a master or a player.
-
-	Args:
-		update: The Telegram Update object.
-		context: The CallbackContext object.
-
-	Returns:
-		The next state of the conversation (initial_state).
-
-	"""
-	print('Start clicked')  # TODO Restart logic
+	print('Start clicked')
 	logger.info('start function called')
 	reply_keyboard = [
 		[
 			InlineKeyboardButton("Мастер", callback_data="master"),
 			InlineKeyboardButton("Игрок", callback_data="player"),
-		]
+		],
+
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
-	await update.message.reply_text(
+	await update.effective_message.reply_text(
 		'Выбери кто ты?',
-		# in chat button
 		reply_markup=reply_markup,
 	)
 	return initial_state
 
+
+# async def back(update: Update, context: CallbackContext) -> int:
+#
 
 async def handle_role_selection(update: Update, context: CallbackContext):
 	print("first_selection")
@@ -75,6 +68,10 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
 								 callback_data="master_applications"),
 			InlineKeyboardButton("Создать новую заявку",
 								 callback_data="new_master_application"),
+
+		],
+		[
+			InlineKeyboardButton("Назад", callback_data="start_again"),
 		]
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
@@ -82,9 +79,9 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
 	# 											  reply_markup=reply_markup)
 	if is_first_time:
 		await update.effective_message.edit_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
-												  reply_markup=reply_markup)
+												 reply_markup=reply_markup)
 	else:
-		await update.effective_message.reply_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
+		await update.effective_message.reply_text(text=f'Вернулся {master_id}? Что ты теперь хочешь сделать?',
 												  reply_markup=reply_markup)
 	return master_selection
 
@@ -101,6 +98,7 @@ async def get_master_select(update: Update, context: CallbackContext):
 	query = update.callback_query
 	await query.answer()
 
+
 	if query.data == 'master_applications':
 		query = """
 				SELECT game_name, game_id FROM games
@@ -108,22 +106,37 @@ async def get_master_select(update: Update, context: CallbackContext):
 				"""
 		# Execute a request with the selected game type parameter
 		result = db.execute_query(query, (context.user_data["master_id"],))
+		if result:
+			buttons = []
 
-		buttons = []
-		# Generating a list of games to display to the user as buttons
+			for game in result:
+				button = InlineKeyboardButton(
+					game[0], callback_data='game-' + str(game[1]))
+				buttons.append(button)
 
-		for game in result:
-			button = InlineKeyboardButton(
-				game[0], callback_data='game-' + str(game[1]))
-			buttons.append(button)
-		reply_markup = build_keyboard(buttons, n_per_row=1)
-		# reply_markup = InlineKeyboardMarkup([buttons])
-		await update.callback_query.edit_message_text('Вот твои заявки!', reply_markup=reply_markup)
-		return game_editing
+			reply_markup = build_keyboard(buttons, n_per_row=1)
+
+
+			await update.callback_query.edit_message_text('Вот твои заявки!', reply_markup=reply_markup)
+			return game_editing
+		else:
+			await update.callback_query.edit_message_text('Не найдено ни одной игры =(')
+			time.sleep(3)
+			return await start_master_conversation(update, context, is_first_time=False)
+
+
 	elif query.data == 'new_master_application':
 		await update.callback_query.edit_message_text(
 			text="✍️ Раз вы здесь и ищете авантюристов – значит, что-то стряслось? С каким делом гильдия может вам помочь? (_Укажите название грядущей игры_)",
-			parse_mode="Markdown"
+			parse_mode="Markdown",
+			# reply_markup=InlineKeyboardMarkup(
+			# 	[
+			# 		[
+			# 			InlineKeyboardButton(text="Назад", callback_data="back_to_role_selection"),
+			# 			# InlineKeyboardButton(text="Отмена", callback_data="cancel") # TODO Optional
+			# 		]
+			# 	]
+			# )
 		)
 
 		return master_input_game_name
@@ -165,8 +178,6 @@ async def show_master_application(update: Update, context: CallbackContext, game
 		else:
 			image_url = game[i]
 
-
-
 	time.sleep(1)
 	reply_keyboard = [
 		[
@@ -193,8 +204,6 @@ async def show_master_application(update: Update, context: CallbackContext, game
 
 async def show_master_editing_options(update: Update, context: CallbackContext):
 	print('I am in master_edit_game')
-
-
 
 	buttons = [InlineKeyboardButton(key[1], callback_data=key[0]) for key in keys_map.items() if key[0] != 'master_id']
 	reply_markup = build_keyboard(buttons)
@@ -242,6 +251,7 @@ async def delete_game(update: Update, context: CallbackContext):
 
 async def get_game_name_from_master(update: Update, context: CallbackContext) -> int:
 	print('im in get_game_name')
+
 	context.user_data["game_name"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'👨‍👨‍👦‍👦 Ух, звучит серьёзно! Тут нужна целая группа приключенцев… Сколько, как вы считаете? (_Укажите, сколько свободных мест есть на вашу игру_)',
@@ -363,9 +373,6 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 	print(update.effective_message.text)
 
 	context.user_data["free_text"] = update.effective_message.text
-	await update.effective_message.reply_text(
-		'Спасибо! Ваш анонс принят.',
-	)
 
 	# Prepare a summary of the collected data
 	output_string = ''
@@ -382,7 +389,8 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 	)
 
 	# Send message with summary to main resiever
-	await context.bot.send_photo(CHAT_ID, photo=context.user_data['image_url'], caption="Новый анонс получен:\n" + output_string)
+	await context.bot.send_photo(CHAT_ID, photo=context.user_data['image_url'],
+								 caption="Новый анонс получен:\n" + output_string)
 	# Insert the data into the database
 	query = f"""
             INSERT INTO games (master_id, game_name, players_count, system, setting, game_type, time, cost, experience, image_url, free_text)
@@ -392,7 +400,10 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 		db.execute_query(query, tuple(context.user_data.values()))
 	except Exception as e:
 		print(e)
-	# End the conversation
+	await update.effective_message.reply_text(
+		'Спасибо! Ваш анонс принят. Нажми /start если хочешь начать сначала.',
+	)
+
 	return ConversationHandler.END
 
 
@@ -402,7 +413,10 @@ async def start_player_conversation(update: Update, context: CallbackContext):
 	reply_keyboard = [
 		[
 			InlineKeyboardButton("Поиск", callback_data="search"),
-			InlineKeyboardButton("Заявка", callback_data="application"),
+			# InlineKeyboardButton("Заявка", callback_data="application"),
+		],
+		[
+			InlineKeyboardButton("Назад", callback_data="start_again"),
 		]
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
@@ -417,8 +431,9 @@ async def handle_player_selection(update: Update, context: CallbackContext):
 	print("second_selection")
 	if update.callback_query.data == 'application':
 		return await start_player_application(update, context)
-	else:
+	elif update.callback_query.data == 'search':
 		return await start_player_search(update, context)
+
 
 
 async def start_player_application(update: Update, context: CallbackContext) -> int:
@@ -563,10 +578,15 @@ async def start_player_search(update: Update, context: CallbackContext) -> int:
 	question_keyboard = [
 		[
 			InlineKeyboardButton('Покажи мне все игры',
-								 callback_data='Покажи мне все игры'),
+							  callback_data='Покажи мне все игры')
+		],
+		[
 			InlineKeyboardButton('Я хочу выбрать по фильтру',
 								 callback_data='Я хочу выбрать по фильтру'),
-		]
+		],
+		# [
+		# 	InlineKeyboardButton('Назад', callback_data='start_again')
+		# ]
 	]
 	reply_markup = InlineKeyboardMarkup(question_keyboard)
 	await update.effective_message.reply_text(
@@ -590,6 +610,7 @@ async def get_player_selection(update: Update, context: CallbackContext) -> int:
 			else:
 				await update.effective_message.reply_photo(caption=str(player[0]), photo=player[1])
 			await asyncio.sleep(0.5)
+		await update.effective_message.reply_text("На этом все. Нажми /start если хочешь начать сначала")
 		return ConversationHandler.END
 	else:
 		question_keyboard = [
@@ -715,8 +736,6 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
 	result = db.execute_query(
 		query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
 
-
-
 	for game in result:
 		image_url = None
 		temp_string = ''
@@ -729,7 +748,7 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
 			await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url)
 		else:
 			await update.effective_message.reply_text(temp_string)
-
+	await update.effective_message.reply_text("На этом все. Нажми /start если хочешь начать сначала")
 	return ConversationHandler.END
 
 
@@ -737,5 +756,3 @@ async def cancel(update: Update, context: CallbackContext) -> int:
 	print("END")
 	await update.effective_message.reply_text('Пока!')
 	return ConversationHandler.END
-
-

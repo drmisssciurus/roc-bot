@@ -40,6 +40,8 @@ from conversation import (
 from states import *
 
 
+
+
 #ddd
 async def set_bot_commands(application: Application) -> None:
 	"""Устанавливаем постоянные команды."""
@@ -84,7 +86,7 @@ conv_handler = ConversationHandler(
 	states={
 		initial_state: [CallbackQueryHandler(handle_role_selection, pattern="^(master|player)$")],
 		master_selection: [
-			CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application)$")],
+			CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application)$")], # back_to_role_selection
 
 		# Game Editing Flow
 		game_editing: [CallbackQueryHandler(show_master_application, pattern="^game")],
@@ -105,7 +107,7 @@ conv_handler = ConversationHandler(
 		master_input_free_text: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text_from_master)],
 
 		# Player
-		player_selection: [CallbackQueryHandler(handle_player_selection, pattern="^(search|application)$")],
+		player_selection: [CallbackQueryHandler(handle_player_selection, pattern="^(search|application|back_to_role_selection)$")],
 
 		player_name_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_player_name)],
 		player_contact_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_contact_from_player)],
@@ -121,7 +123,10 @@ conv_handler = ConversationHandler(
 		search_system_input: [CallbackQueryHandler(get_search_system, pattern="^system-.*")],
 		search_price_input: [CallbackQueryHandler(get_search_price, pattern="^cost-.*")],
 	},
-	fallbacks=[CommandHandler('cancel', cancel)]
+	fallbacks=[
+		CommandHandler('cancel', cancel), CallbackQueryHandler(cancel, pattern="^cancel$"),
+		CallbackQueryHandler(start, pattern="^start_again")
+	] #CallbackQueryHandler(go_back_to_role_selection, pattern="^back_to_role_selection$")
 )
 application.add_handler(conv_handler)
 application.add_handler(CommandHandler("help", help_command))
