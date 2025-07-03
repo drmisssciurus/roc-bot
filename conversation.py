@@ -121,7 +121,11 @@ async def get_master_select(update: Update, context: CallbackContext):
 		await update.callback_query.edit_message_text('Вот твои заявки!', reply_markup=reply_markup)
 		return game_editing
 	elif query.data == 'new_master_application':
-		await update.callback_query.edit_message_text(text='Какое Название у твоей игры')
+		await update.callback_query.edit_message_text(
+			text="✍️ Раз вы здесь и ищете авантюристов – значит, что-то стряслось? С каким делом гильдия может вам помочь? (_Укажите название грядущей игры_)",
+			parse_mode="Markdown"
+		)
+
 		return master_input_game_name
 
 
@@ -240,7 +244,8 @@ async def get_game_name_from_master(update: Update, context: CallbackContext) ->
 	print('im in get_game_name')
 	context.user_data["game_name"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Сколько игроков тебе нужно?',
+		'👨‍👨‍👦‍👦 Ух, звучит серьёзно! Тут нужна целая группа приключенцев… Сколько, как вы считаете? (_Укажите, сколько свободных мест есть на вашу игру_)',
+		parse_mode="Markdown"
 	)
 	return master_input_players_count
 
@@ -257,7 +262,8 @@ async def get_players_count_from_master(update: Update, context: CallbackContext
 	context.user_data["players_count"] = update.effective_message.text
 
 	await update.effective_message.reply_text(
-		'Какая у тебя система?',
+		'🎲 Понимаю вашу спешку, но нужно следовать правилам. У нас тут система, знаете ли! (_Укажите, по какой системе игровых правил вы собираетесь вести игру_)',
+		parse_mode="Markdown"
 	)
 	return master_input_system
 
@@ -267,7 +273,8 @@ async def get_system_from_master(update: Update, context: CallbackContext) -> in
 
 	context.user_data["system"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Какой у тебя сеттинг?',
+		'🌐 Так-так, и куда же придётся отправиться нашим доблестным авантюристам? (_Парой слов опишите сеттинг и/или жанр вашей игры_)',
+		parse_mode="Markdown"
 	)
 	return master_input_setting
 
@@ -285,7 +292,8 @@ async def get_setting_from_master(update: Update, context: CallbackContext) -> i
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
 	await update.effective_message.reply_text(
-		'Какой у тебя вид игры?',
+		'⏳ Похоже, дело небыстрое… Надолго ли вам понадобятся услуги приключенцев гильдии? (_Укажите планируемую длительность игры: ван-шот, модуль или кампания_)',
+		parse_mode="Markdown",
 		reply_markup=reply_markup,
 	)
 
@@ -299,7 +307,8 @@ async def get_game_type_from_master(update: Update, context: CallbackContext) ->
 	context.user_data["game_type"] = query.data
 	# Чекнуть возможность добавить выбор даты
 	await update.effective_message.reply_text(
-		'Выбери время и место (дату напиши в формате ДД.ММ.ГГ)',
+		'📆 Хорошо, записал… И когда вы готовы выдвигаться в путь? (_Укажите удобные даты и/или время для игры_)',
+		parse_mode="Markdown",
 	)
 	return master_input_time
 
@@ -309,7 +318,8 @@ async def get_time_from_master(update: Update, context: CallbackContext) -> int:
 
 	context.user_data["time"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Выбери стоимость своей игры',
+		'💰 Осталась пара формальностей. Вы хотите взять с приключенцев страховочный взнос? А то, знаете ли, бывали случаи… (_Укажите желаемую цену за игровую сессию с игрока_)',
+		parse_mode="Markdown",
 	)
 	return master_input_cost
 
@@ -319,7 +329,9 @@ async def get_cost_from_master(update: Update, context: CallbackContext) -> int:
 
 	context.user_data["cost"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Важен ли тебе опыт игроков',
+		'🌟 Ваше дело можно решить разными способами, знаете ли… Какие навыки и снаряжение нужны вашим авантюристам? (_Укажите желаемый опыт и/или стиль игры ваших игроков_)',
+		parse_mode="Markdown",
+
 	)
 	return master_input_experience
 
@@ -329,7 +341,8 @@ async def get_experience_from_master(update: Update, context: CallbackContext) -
 
 	context.user_data["experience"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Загрузи картинку (Обязательно)',
+		'🖼️ Последний штрих: пожалуйста, приложите вашу гербовую печать, портрет преступника и карту местности. Приключенцам нужны зацепки, знаете ли! (_Прикрепите к вашей заявке сопроводительное изображение это обязательный пункт_)',
+		parse_mode="Markdown",
 	)
 	return master_input_image
 
@@ -340,7 +353,8 @@ async def get_image_from_master(update: Update, context: CallbackContext) -> int
 	await file.download_to_drive(f'./images/{image.file_id}.jpg')
 	context.user_data["image_url"] = f'./images/{image.file_id}.jpg'
 	await update.effective_message.reply_text(
-		'Напиши описание своего сеттинга если есть',
+		'📜 Формуляр заполнен! Я подготовлю почтовых ястребов – а вы можете написать письмо для вашей будущей группы героев. (_Оставьте описание вашей игры, пожелания к игрокам и иное, что считаете нужным_)',
+		parse_mode="Markdown",
 	)
 	return master_input_free_text
 
@@ -412,7 +426,10 @@ async def start_player_application(update: Update, context: CallbackContext) -> 
 	query.answer()
 	print("start_player_conversation() called")
 	context.user_data.clear()
-	await update.callback_query.edit_message_text(text="Как тебя зовут?")
+	await update.callback_query.edit_message_text(
+		text="😀 Приветствуем в рядах гильдии – мы всегда рады новым героям! Представьтесь, пожалуйста. (_Напишите своё имя и/или никнейм_)",
+		parse_mode="Markdown",
+	)
 
 	return player_name_input
 
@@ -424,7 +441,10 @@ async def get_player_name(update: Update, context: CallbackContext) -> int:
 
 	context.user_data["player_name"] = update.effective_message.text
 	# await update.callback_query.edit_message_text(text="Как с тобой связаться?")
-	await update.effective_message.reply_text(text="Как с тобой связаться?")
+	await update.effective_message.reply_text(
+		text="✍️ Когда мы найдём подходящее приключение для вас, куда отправлять почтового ястреба? (_Укажите никнейм в ТГ и/или предпочитаемый способ связи_)",
+		parse_mode="Markdown",
+	)
 	return player_contact_input
 
 
@@ -444,8 +464,8 @@ async def get_contact_from_player(update: Update, context: CallbackContext) -> i
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
 
 	await update.message.reply_text(
-		"Какой тип игры?",
-		# in chat button
+		"⏳Походы в приключения бывают долгими, знаете ли! Как надолго вы готовы отлучиться? (_Укажите предпочтительную длительность игры: ван-шот, модуль или кампания_)",
+		parse_mode="Markdown",
 		reply_markup=reply_markup,
 	)
 	return player_game_type_input
@@ -458,7 +478,10 @@ async def get_game_type_from_player(update: Update, context: CallbackContext) ->
 
 	context.user_data["game_type"] = update.effective_message.text
 
-	await update.callback_query.edit_message_text(text='Какая система?')
+	await update.callback_query.edit_message_text(
+		text='🌐 Какого рода приключения предпочитаете? Подвигу везде есть место! (_В паре слов опишите, в каком сеттинге и/или жанре вы хотели бы сыграть_)',
+		parse_mode="Markdown",
+	)
 	return players_system_input
 
 
@@ -469,7 +492,8 @@ async def get_system_from_player(update: Update, context: CallbackContext) -> in
 
 	context.user_data["system"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'В какое время тебе предпочтительнее?',
+		'📆 Дожили: приключения по расписанию… В моё время авантюрист был всегда готов, знаете ли! (_Укажите удобные даты и/или время для игры_)',
+		parse_mode="Markdown",
 	)
 	return player_time_input
 
@@ -481,7 +505,8 @@ async def get_time_from_player(update: Update, context: CallbackContext) -> int:
 
 	context.user_data["time"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Если есть предпочтения по цене напиши',
+		'💰 Последняя формальность: гильдия принимает взносы от авантюристов – сколько вы готовы внести в нашу казну? (_Укажите желаемую цену за игровую сессию_)',
+		parse_mode="Markdown",
 	)
 	return player_price_input
 
@@ -493,7 +518,8 @@ async def get_price_from_player(update: Update, context: CallbackContext) -> int
 
 	context.user_data["price"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Если есть какие-то пожелания, напиши',
+		'📜 Формуляр заполнен! Пока чернила сохнут – расскажите немного о себе? Авантюристы бывают разные, знаете ли! (_Опишите свой игровой опыт, пожелания от игры, настольно-ролевые предпочтения и иное, что считаете нужным_)',
+		parse_mode="Markdown",
 	)
 	return player_free_text_input
 

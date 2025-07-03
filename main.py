@@ -1,5 +1,6 @@
 from telegram import BotCommand
-from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, CallbackQueryHandler
+from telegram import Update
+from telegram.ext import Application, CallbackContext, CommandHandler, ConversationHandler, MessageHandler, filters, CallbackQueryHandler
 from config import BOT_TOKEN
 from conversation import (
 	start,
@@ -45,10 +46,31 @@ async def set_bot_commands(application: Application) -> None:
 	commands = [
 		BotCommand("start", "Запустить бота"),
 		BotCommand("help", "Помощь"),
+		BotCommand("faq", "Часто задаваемые вопросы"),
 		BotCommand("cancel", "Отмена текущего действия"),
 	]
 	await application.bot.set_my_commands(commands)
 
+
+#help
+async def help_command(update: Update, context: CallbackContext) -> None:
+    help_text = (
+        "📌 Вот что я умею:\n\n"
+        "/start — Запустить бота и выбрать, вы мастер или игрок\n"
+        "/help — Показать это сообщение\n"
+        "/cancel — Отменить текущее действие\n\n"
+        "🔹 Мастера могут создать анонс своей игры.\n"
+        "🔹 Игроки могут найти игру или оставить заявку.\n"
+        "Если возникли вопросы — не стесняйтесь спрашивать!"
+    )
+    await update.message.reply_text(help_text)
+
+async def faq_command(update: Update, context: CallbackContext) -> None:
+	faq_text = (
+		"🏗️ *Этот раздел дополняется.* Обращайтесь с вопросами о подготовке и бронировании игр ко Льву @dadjezz, "
+		"а по работе бота спрашивайте Игоря @igor\\_krivic."
+	)
+	await update.message.reply_text(faq_text, parse_mode="Markdown")
 
 application = Application.builder().token(BOT_TOKEN).build()
 
@@ -102,4 +124,6 @@ conv_handler = ConversationHandler(
 	fallbacks=[CommandHandler('cancel', cancel)]
 )
 application.add_handler(conv_handler)
+application.add_handler(CommandHandler("help", help_command))
+application.add_handler(CommandHandler("faq", faq_command))
 application.run_polling()
