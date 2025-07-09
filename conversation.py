@@ -7,7 +7,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
 
 from database.db_connectior import keys_map, players_keys, db
-from config import CHAT_ID
+from config import CHAT_ID, evgeniya_tiamat_id, igor_krivic_id, dadjezz_id
 
 # Включаем логирование
 logging.basicConfig(
@@ -26,6 +26,8 @@ def build_keyboard(button, n_per_row=2):
 
 async def start(update: Update, context: CallbackContext) -> int:
 	print('Start clicked')
+	# print(update.effective_message.from_user.username)
+	# print(update.effective_message.from_user.id)
 	logger.info('start function called')
 	reply_keyboard = [
 		[
@@ -389,8 +391,14 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 	)
 
 	# Send message with summary to main resiever
-	await context.bot.send_photo(CHAT_ID, photo=context.user_data['image_url'],
-								 caption="Новый анонс получен:\n" + output_string)
+	await context.bot.send_photo(evgeniya_tiamat_id, photo=context.user_data['image_url'],
+								 caption="❗️Новый анонс получен❗️\n" + output_string)
+
+	await context.bot.send_photo(dadjezz_id, photo=context.user_data['image_url'],
+								 caption="❗️Новый анонс получен❗️\n" + output_string)
+
+	await context.bot.send_photo(igor_krivic_id, photo=context.user_data['image_url'],
+								 caption="❗️Новый анонс получен❗️\n" + output_string)
 	# Insert the data into the database
 	query = f"""
             INSERT INTO games (master_id, game_name, players_count, system, setting, game_type, time, cost, experience, image_url, free_text)
