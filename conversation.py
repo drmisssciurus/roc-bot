@@ -38,7 +38,7 @@ async def start(update: Update, context: CallbackContext) -> int:
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
 	await update.effective_message.reply_text(
-		'Выбери кто ты?',
+		'🧙 Добро пожаловать в Гильдию Авантюристов! Вы сегодня к нам в каком статусе?',
 		reply_markup=reply_markup,
 	)
 	return initial_state
@@ -80,10 +80,10 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
 	# await update.effective_message.edit_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
 	# 											  reply_markup=reply_markup)
 	if is_first_time:
-		await update.effective_message.edit_text(text=f'Привет {master_id}! Что ты хочешь сделать?',
+		await update.effective_message.edit_text(text=f'☺️Ааа, Мастер {master_id}! Рад вас видеть. Чем могу быть полезен?',
 												 reply_markup=reply_markup)
 	else:
-		await update.effective_message.reply_text(text=f'Вернулся {master_id}? Что ты теперь хочешь сделать?',
+		await update.effective_message.reply_text(text=f'☺️Вернулся {master_id}? Что нибудь еще?',
 												  reply_markup=reply_markup)
 	return master_selection
 
@@ -119,10 +119,10 @@ async def get_master_select(update: Update, context: CallbackContext):
 			reply_markup = build_keyboard(buttons, n_per_row=1)
 
 
-			await update.callback_query.edit_message_text('Вот твои заявки!', reply_markup=reply_markup)
+			await update.callback_query.edit_message_text('📚 Конечно-конечно! Вот архив ваших запросов в Гильдию. У меня всё записано, знаете ли!', reply_markup=reply_markup)
 			return game_editing
 		else:
-			await update.callback_query.edit_message_text('Не найдено ни одной игры =(')
+			await update.callback_query.edit_message_text('👓Не найдено ни одного запроса =(')
 			time.sleep(3)
 			return await start_master_conversation(update, context, is_first_time=False)
 
@@ -409,7 +409,9 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 	except Exception as e:
 		print(e)
 	await update.effective_message.reply_text(
-		'Спасибо! Ваш анонс принят. Нажми /start если хочешь начать сначала.',
+		'🤝 Формуляр заполнен! Спасибо за обращение в Гильдию Авантюристов RoC! Теперь ждём весточки от ваших будущих героев…(_Нажми /start если хочешь начать сначала._)',
+		parse_mode="Markdown"
+
 	)
 
 	return ConversationHandler.END
@@ -429,7 +431,7 @@ async def start_player_conversation(update: Update, context: CallbackContext):
 	]
 	reply_markup = InlineKeyboardMarkup(reply_keyboard)
 
-	new_message_text = "Что хочешь сделать?"
+	new_message_text = "🫡 Приветствую в стенах Гильдии, авантюрист! Что вас сегодня интересует?"
 	await update.callback_query.edit_message_text(text=new_message_text, reply_markup=reply_markup)
 
 	return player_selection
@@ -554,7 +556,7 @@ async def get_free_text_from_player(update: Update, context: CallbackContext) ->
 
 	context.user_data["free_text"] = update.effective_message.text
 	await update.effective_message.reply_text(
-		'Спасибо! Ваша заявка принята.',
+		'🤝 Формуляр заполнен! Спасибо за обращение в Гильдию Авантюристов RoC! Теперь мы будем искать для вас подходящее приключение…',
 	)
 	# Prepare a summary of the collected data
 	output_string = ''
@@ -585,11 +587,11 @@ async def start_player_search(update: Update, context: CallbackContext) -> int:
 	print("start_search_conversation")
 	question_keyboard = [
 		[
-			InlineKeyboardButton('Покажи мне все игры',
+			InlineKeyboardButton('Конечно-конечно! Хотите посмотреть весь список?',
 							  callback_data='Покажи мне все игры')
 		],
 		[
-			InlineKeyboardButton('Я хочу выбрать по фильтру',
+			InlineKeyboardButton('...или мне помочь вам найти что-то подходящее?',
 								 callback_data='Я хочу выбрать по фильтру'),
 		],
 		# [
@@ -630,7 +632,7 @@ async def get_player_selection(update: Update, context: CallbackContext) -> int:
 		]
 		reply_markup = InlineKeyboardMarkup(question_keyboard)
 		await update.effective_message.reply_text(
-			"Выбери тип игры:",
+			"👓 Что ж, начнём поиск! Вам какое приключение: короткое, длинное или посерединке?",
 			reply_markup=reply_markup,
 		)
 		return search_type_input
@@ -687,7 +689,7 @@ async def get_search_type(update: Update, context: CallbackContext) -> int:
 	print(buttons)
 	reply_markup = InlineKeyboardMarkup([buttons])
 	await update.effective_message.reply_text(
-		"Какая система?",
+		"🧑‍⚖️ Везде свои законы, знаете ли. Но авантюристы – особый народ: они вольны сами выбирать, какой системе правил следовать! А какую выбираете вы?",
 		reply_markup=reply_markup,
 	)
 	return search_system_input
@@ -716,7 +718,7 @@ async def get_search_system(update: Update, context: CallbackContext) -> int:
 	reply_markup = InlineKeyboardMarkup([buttons])
 
 	await update.effective_message.reply_text(
-		"Какая стоимость?",
+		"💰 На какой размер взносов за каждое ваше приключение может рассчитывать Гильдия?",
 		reply_markup=reply_markup,
 	)
 	return search_price_input
