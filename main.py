@@ -38,10 +38,10 @@ from conversation import (
 )
 
 from states import *
+from dotenv import load_dotenv
 
 
-
-
+load_dotenv()
 #ddd
 async def set_bot_commands(application: Application) -> None:
 	"""Устанавливаем постоянные команды."""

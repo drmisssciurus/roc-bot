@@ -1,8 +1,9 @@
 import asyncio
 import logging
+import os
 import re
 import time
-
+from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
 
@@ -17,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 from states import *
 
+load_dotenv()
+
+is_local = bool(os.environ.get('IS_LOCAL'))
+pass
 
 def build_keyboard(button, n_per_row=2):
 	return InlineKeyboardMarkup(
@@ -27,7 +32,7 @@ def build_keyboard(button, n_per_row=2):
 async def start(update: Update, context: CallbackContext) -> int:
 	print('Start clicked')
 	# print(update.effective_message.from_user.username)
-	# print(update.effective_message.from_user.id)
+	print(update.effective_message.from_user.id)
 	logger.info('start function called')
 	reply_keyboard = [
 		[
@@ -104,7 +109,7 @@ async def get_master_select(update: Update, context: CallbackContext):
 	if query.data == 'master_applications':
 		query = """
 				SELECT game_name, game_id FROM games
-				WHERE master_id=?
+				WHERE master_id=%s
 				"""
 		# Execute a request with the selected game type parameter
 		result = db.execute_query(query, (context.user_data["master_id"],))
@@ -156,16 +161,16 @@ async def show_master_application(update: Update, context: CallbackContext, game
 					SELECT
 						game_name,
 						players_count,
-						system,
+						system_name,
 						setting,
 						game_type,
-						time,
+						tgame_time,
 						cost,
 						experience,
 						free_text,
 						image_url 
 					FROM games
-					WHERE game_id=?
+					WHERE game_id=%s
 					"""
 
 	game = db.execute_query(query, (context.user_data["game_to_edit"],))[0]
@@ -226,8 +231,8 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
 	# TODO check input for all options
 	query = f"""
     		UPDATE games
-    		SET {context.user_data['value_to_edit']} = ?
-    		WHERE game_id = ?;
+    		SET {context.user_data['value_to_edit']} = %s
+    		WHERE game_id = %s;
 			"""
 	result = db.execute_query(query, (update.effective_message.text, context.user_data['game_to_edit']))
 	print(result)
@@ -244,7 +249,7 @@ async def delete_game(update: Update, context: CallbackContext):
 	print('I am in delete_game')
 	query = f"""
 			DELETE FROM games
-			WHERE game_id = ?;
+			WHERE game_id = %s;
 			"""
 	result = db.execute_query(query, (context.user_data["game_to_edit"],))
 	await update.callback_query.edit_message_text('Ваша заявка удалена :(')
@@ -283,7 +288,7 @@ async def get_players_count_from_master(update: Update, context: CallbackContext
 async def get_system_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
-	context.user_data["system"] = update.effective_message.text
+	context.user_data["system_name"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'🌐 Так-так, и куда же придётся отправиться нашим доблестным авантюристам? (_Парой слов опишите сеттинг и/или жанр вашей игры_)',
 		parse_mode="Markdown"
@@ -328,7 +333,7 @@ async def get_game_type_from_master(update: Update, context: CallbackContext) ->
 async def get_time_from_master(update: Update, context: CallbackContext) -> int:
 	print(update.effective_message.text)
 
-	context.user_data["time"] = update.effective_message.text
+	context.user_data["game_time"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'💰 Осталась пара формальностей. Вы хотите взять с приключенцев страховочный взнос? А то, знаете ли, бывали случаи… (_Укажите желаемую цену за игровую сессию с игрока_)',
 		parse_mode="Markdown",
@@ -390,19 +395,21 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 		caption=output_string, photo=context.user_data['image_url']
 	)
 
+	if is_local:
+		receivers = [CHAT_ID]
+	else:
+		receivers = [dadjezz_id, igor_krivic_id, evgeniya_tiamat_id]
+
 	# Send message with summary to main resiever
-	await context.bot.send_photo(evgeniya_tiamat_id, photo=context.user_data['image_url'],
+	for receiver in receivers:
+		await context.bot.send_photo(receiver, photo=context.user_data['image_url'],
 								 caption="❗️Новый анонс получен❗️\n" + output_string)
 
-	await context.bot.send_photo(dadjezz_id, photo=context.user_data['image_url'],
-								 caption="❗️Новый анонс получен❗️\n" + output_string)
 
-	await context.bot.send_photo(igor_krivic_id, photo=context.user_data['image_url'],
-								 caption="❗️Новый анонс получен❗️\n" + output_string)
 	# Insert the data into the database
 	query = f"""
-            INSERT INTO games (master_id, game_name, players_count, system, setting, game_type, time, cost, experience, image_url, free_text)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            INSERT INTO games (master_id, game_name, players_count, system_name, setting, game_type, game_time, cost, experience, image_url, free_text)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
 	try:
 		db.execute_query(query, tuple(context.user_data.values()))
@@ -515,7 +522,7 @@ async def get_system_from_player(update: Update, context: CallbackContext) -> in
 
 	print(update.effective_message.text)
 
-	context.user_data["system"] = update.effective_message.text
+	context.user_data["system_name"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'📆 Дожили: приключения по расписанию… В моё время авантюрист был всегда готов, знаете ли! (_Укажите удобные даты и/или время для игры_)',
 		parse_mode="Markdown",
@@ -528,7 +535,7 @@ async def get_time_from_player(update: Update, context: CallbackContext) -> int:
 
 	print(update.effective_message.text)
 
-	context.user_data["time"] = update.effective_message.text
+	context.user_data["game_time"] = update.effective_message.text
 	await update.effective_message.reply_text(
 		'💰 Последняя формальность: гильдия принимает взносы от авантюристов – сколько вы готовы внести в нашу казну? (_Укажите желаемую цену за игровую сессию_)',
 		parse_mode="Markdown",
@@ -571,8 +578,8 @@ async def get_free_text_from_player(update: Update, context: CallbackContext) ->
 	# await context.bot.send_message(chat_id, "Новый анонс получен:\n" + output_string)
 	# Insert the data into the database
 	query = f"""
-            INSERT INTO players_requests (player_name, contact, game_type, system, time, price, free_text)
-            VALUES (?,?,?,?,?,?,?)
+            INSERT INTO players_requests (player_name, contact, game_type, system_name, game_time, price, free_text)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
             """
 	try:
 		db.execute_query(query, tuple(context.user_data.values()))
@@ -641,7 +648,7 @@ async def get_player_selection(update: Update, context: CallbackContext) -> int:
 def get_game_announcement() -> list:
 	# Query to get games of the selected type from the database
 	query = """
-            SELECT master_id, game_name, players_count, system, setting, game_type, time, cost, experience, free_text, image_url FROM games
+            SELECT master_id, game_name, players_count, system_name, setting, game_type, game_time, cost, experience, free_text, image_url FROM games
             """
 	# Execute a request with the selected game type parameter
 	result = db.execute_query(query)
@@ -669,7 +676,7 @@ async def get_search_type(update: Update, context: CallbackContext) -> int:
 	print(update.callback_query.data)
 	context.user_data["game_type"] = player_choise_type = update.callback_query.data
 	query = """
-            SELECT DISTINCT system FROM games WHERE game_type=?
+            SELECT DISTINCT system_name FROM games WHERE game_type=%s
             """
 	result = db.execute_query(query, (player_choise_type,))
 
@@ -701,7 +708,7 @@ async def get_search_system(update: Update, context: CallbackContext) -> int:
 		"system-"):]
 
 	query = """
-            SELECT DISTINCT cost FROM games WHERE game_type=? AND system=? ORDER BY cost ASC;
+            SELECT DISTINCT cost FROM games WHERE game_type=%s AND system_name=%s ORDER BY cost ASC;
             """
 	result = db.execute_query(
 		query, (context.user_data["game_type"], player_choise_system))
@@ -732,16 +739,16 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
             		master_id,
             		game_name,
             		players_count,
-            		system,
+            		system_name,
             		setting,
             		game_type,
-            		time,
+            		game_time,
             		cost,
             		experience,
             		free_text,
             		image_url 
             FROM games 
-            WHERE game_type=? AND system=? AND cost=?;
+            WHERE game_type=%s AND system_name=%s AND cost=%s;
             """
 	result = db.execute_query(
 		query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
