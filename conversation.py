@@ -164,7 +164,7 @@ async def show_master_application(update: Update, context: CallbackContext, game
 						system_name,
 						setting,
 						game_type,
-						tgame_time,
+						game_time,
 						cost,
 						experience,
 						free_text,
