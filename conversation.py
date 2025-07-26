@@ -248,12 +248,19 @@ async def exit_editing_loop(update: Update, context: CallbackContext):
 async def delete_game(update: Update, context: CallbackContext):
 	print('I am in delete_game')
 	query = f"""
+		select image_url from games where game_id = %s
+	"""
+	result = db.execute_query(query, (context.user_data["game_to_edit"],))
+	os.remove(result[0][0])
+	query = f"""
 			DELETE FROM games
 			WHERE game_id = %s;
 			"""
 	result = db.execute_query(query, (context.user_data["game_to_edit"],))
-	await update.callback_query.edit_message_text('Ваша заявка удалена :(')
-	return await start_master_conversation(update, context)
+	await update.effective_message.delete()
+	# await update.callback_query.edit_message_text('Ваша заявка удалена :(')
+	await update.effective_message.reply_text('Ваша заявка удалена :(')
+	return await start_master_conversation(update, context,  is_first_time=False)
 
 
 async def get_game_name_from_master(update: Update, context: CallbackContext) -> int:
