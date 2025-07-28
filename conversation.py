@@ -608,9 +608,9 @@ async def start_player_search(update: Update, context: CallbackContext) -> int:
 			InlineKeyboardButton('...или мне помочь вам найти что-то подходящее?',
 								 callback_data='Я хочу выбрать по фильтру'),
 		],
-		# [
-		# 	InlineKeyboardButton('Назад', callback_data='start_again')
-		# ]
+		[
+			InlineKeyboardButton('Назад', callback_data='start_again')
+		]
 	]
 	reply_markup = InlineKeyboardMarkup(question_keyboard)
 	await update.effective_message.reply_text(
@@ -735,7 +735,7 @@ def get_game_announcement() -> list:
 
 
 async def get_search_type(update: Update, context: CallbackContext) -> int:
-	print(update.callback_query.data)
+	print(update.callback_query.data) # TODO
 	context.user_data["game_type"] = player_choise_type = update.callback_query.data
 	query = """
             SELECT DISTINCT system_name FROM games WHERE game_type=%s
@@ -743,25 +743,35 @@ async def get_search_type(update: Update, context: CallbackContext) -> int:
 	result = db.execute_query(query, (player_choise_type,))
 
 	if not result:
-		await update.effective_message.reply_text(
-			"Ничего не найдено по указанным параметрам. Попробуйте изменить фильтр."
-		)
-		return ConversationHandler.END
+         question_keyboard = [
+            [
+                InlineKeyboardButton('Ваншот', callback_data='Ваншот'),
+                InlineKeyboardButton('Кампания', callback_data='Кампания'),
+                InlineKeyboardButton('Модуль', callback_data='Модуль'),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(question_keyboard)
+        await update.effective_message.reply_text(
+            "Ничего не найдено по указанным параметрам. Попробуйте изменить фильтр.",
+            reply_markup=reply_markup,
+        )
+        return search_type_input
 
-	buttons = []
 
-	for system in result:
-		button = InlineKeyboardButton(
+    buttons = []
+
+    for system in result:
+        button = InlineKeyboardButton(
 			system[0], callback_data='system-' + system[0])
-		buttons.append(button)
+        buttons.append(button)
 
-	print(buttons)
-	reply_markup = InlineKeyboardMarkup([buttons])
-	await update.effective_message.reply_text(
-		"🧑‍⚖️ Везде свои законы, знаете ли. Но авантюристы – особый народ: они вольны сами выбирать, какой системе правил следовать! А какую выбираете вы?",
-		reply_markup=reply_markup,
-	)
-	return search_system_input
+    print(buttons)
+    reply_markup = InlineKeyboardMarkup([buttons])
+    await update.effective_message.reply_text(
+        "🧑‍⚖️ Везде свои законы, знаете ли. Но авантюристы – особый народ: они вольны сами выбирать, какой системе правил следовать! А какую выбираете вы?",
+        reply_markup=reply_markup,
+    )
+    return search_system_input
 
 
 async def get_search_system(update: Update, context: CallbackContext) -> int:
