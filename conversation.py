@@ -623,19 +623,23 @@ async def start_player_search(update: Update, context: CallbackContext) -> int:
 async def get_player_selection(update: Update, context: CallbackContext) -> int:
 
 	query = update.callback_query
-	# делает отдельные сообщения
-	if query.data == 'Покажи мне все игры':
-		# Предполагается, что это возвращает список строк
-		list_player = get_game_announcement()
-		# Отправляем каждую строку как отдельное сообщение
-		for player in list_player:
-			if player[1] is None:
-				await update.effective_message.reply_text(str(player[0]))
-			else:
-				await update.effective_message.reply_photo(caption=str(player[0]), photo=player[1])
-			await asyncio.sleep(0.5)
-		await update.effective_message.reply_text("На этом все. Нажми /start если хочешь начать сначала")
-		return ConversationHandler.END
+	if query.data == 'Покажи мне все игры' or query.data == 'back_to_search_conversation':
+		# list buttons
+		query = """
+				SELECT game_name, game_id FROM games
+				"""
+		result = db.execute_query(query, tuple())
+		buttons = [
+			[InlineKeyboardButton(game[0], callback_data='game-' + str(game[1]))] for game in result
+		]
+		buttons.append([InlineKeyboardButton('Выйти', callback_data='start_again')])
+		reply_markup = InlineKeyboardMarkup(buttons)
+		await update.effective_message.delete()
+		await update.effective_message.reply_text(
+			"👓 Вот то что есть на данный момент! Что хотите посмотреть сначала?",
+			reply_markup=reply_markup,
+		)
+		return search_print_all_games
 	else:
 		question_keyboard = [
 			[
@@ -650,6 +654,57 @@ async def get_player_selection(update: Update, context: CallbackContext) -> int:
 			reply_markup=reply_markup,
 		)
 		return search_type_input
+
+async def print_all_games(update: Update, context: CallbackContext) -> int:
+	print("print_all_games()")
+	game_id = update.callback_query.data.split('-')[1]
+	query = """
+			SELECT
+				master_id,
+				game_name,
+				players_count,
+				system_name,
+				setting,
+				game_type,
+				game_time,
+				cost,
+				experience,
+				free_text,
+				image_url 
+			FROM games
+			WHERE game_id = %s
+			"""
+	game = db.execute_query(query, (game_id,))[0]
+
+	keys = keys_map.copy()
+	image_url = None
+	temp_string = ''
+	for i, key in enumerate(keys):
+		if key != 'image_url':
+			if key == 'master_id':
+				temp_string += keys_map[key] + ': ' + '@' + str(game[0]) + '\n'
+			else:
+				temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
+		else:
+			image_url = game[i]
+
+	reply_keyboard = [
+		[
+			InlineKeyboardButton("Назад",
+								 callback_data="back_to_search_conversation"),
+		]
+	]
+	reply_markup = InlineKeyboardMarkup(reply_keyboard)
+
+	await update.effective_message.delete()
+	await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url, reply_markup=reply_markup)
+
+	return player_search
+
+async def back_to_search_conversation(update: Update, context: CallbackContext) -> int:
+	print("back_to_search_conversation()")
+	update.callback_query.data = 'Покажи мне все игры'
+	return await get_player_selection(update, context)
 
 
 def get_game_announcement() -> list:

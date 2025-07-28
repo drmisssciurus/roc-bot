@@ -33,4 +33,5 @@ player_search = 24
 search_type_input = 25
 search_system_input = 26
 search_price_input = 27
+search_print_all_games = 28
 
