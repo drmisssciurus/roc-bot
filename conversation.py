@@ -6,6 +6,7 @@ import time
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
+import hashlib
 
 from database.db_connectior import keys_map, players_keys, db
 from config import CHAT_ID, evgeniya_tiamat_id, igor_krivic_id, dadjezz_id
@@ -28,6 +29,10 @@ def build_keyboard(button, n_per_row=2):
         [button[i:i + n_per_row] for i in range(0, len(button), n_per_row)]
     )
 
+def generate_id(data_to_hash: list) -> str:
+    combined = ','.join(data_to_hash)
+    hash_object = hashlib.sha256(combined.encode('utf-8'))
+    return hash_object.hexdigest()
 
 async def start(update: Update, context: CallbackContext) -> int:
     print('Start clicked')
@@ -77,6 +82,9 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
                                  callback_data="new_master_application"),
 
         ],
+    [
+            InlineKeyboardButton("Заявки от игроков", callback_data="players_applications"),
+        ],
         [
             InlineKeyboardButton("Назад", callback_data="start_again"),
         ]
@@ -97,7 +105,31 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
         1. First of all instead of requesting players count, ask what action is perform.
         2. if NEw game return players_count state. and go on
         3. Otherwise return <new_state>. then new conversation flow
+        
+
 """
+
+async def show_all_players_applications(update: Update, context: CallbackContext):
+    print('I am in show_all_players_applications')
+    query = """
+        SELECT 
+            player_name, 
+            contact, 
+            game_type, 
+            system_name, 
+            game_time, 
+            price, 
+            free_text
+        FROM players_requests
+    """
+    result = db.execute_query(query)
+    for entry in result:
+        keys = players_keys.copy()
+        temp_string = ''
+        for i, key in enumerate(keys):
+            temp_string += keys_map[key] + ': ' + str(entry[i]) + '\n'
+
+        await update.effective_message.reply_text(str(temp_string))
 
 
 async def get_master_select(update: Update, context: CallbackContext):
@@ -147,6 +179,37 @@ async def get_master_select(update: Update, context: CallbackContext):
         )
 
         return master_input_game_name
+
+    else:
+        query = """
+                SELECT player_name, \
+                       contact, \
+                       game_type, \
+                       system_name, \
+                       game_time, \
+                       price, \
+                       free_text
+                FROM players_requests \
+                """
+        result = db.execute_query(query)
+        for entry in result:
+            keys = players_keys.copy()
+            temp_string = ''
+            for i, key in enumerate(keys):
+                temp_string += players_keys[key] + ': ' + str(entry[i]) + '\n'
+
+            await update.effective_message.reply_text(str(temp_string))
+
+    reply_keyboard = [
+        [
+            InlineKeyboardButton("Назад", callback_data="start_again"),
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(reply_keyboard)
+    await update.effective_message.reply_text(text='На этом Все',
+                                              reply_markup=reply_markup)
+
+    return initial_state
 
 
 async def show_master_application(update: Update, context: CallbackContext, game_id=None):
@@ -437,7 +500,7 @@ async def start_player_conversation(update: Update, context: CallbackContext):
     reply_keyboard = [
         [
             InlineKeyboardButton("Поиск", callback_data="search"),
-            # InlineKeyboardButton("Заявка", callback_data="application"),
+            InlineKeyboardButton("Заявка", callback_data="application"),
         ],
         [
             InlineKeyboardButton("Назад", callback_data="start_again"),
@@ -515,7 +578,7 @@ async def get_game_type_from_player(update: Update, context: CallbackContext) ->
 
     print(update.effective_message.text)
 
-    context.user_data["game_type"] = update.effective_message.text
+    context.user_data["game_type"] = update.callback_query.data
 
     await update.callback_query.edit_message_text(
         text='🌐 Какого рода приключения предпочитаете? Подвигу везде есть место! (_В паре слов опишите, в каком сеттинге и/или жанре вы хотели бы сыграть_)',
@@ -584,12 +647,13 @@ async def get_free_text_from_player(update: Update, context: CallbackContext) ->
     # Send message with summary to main resiever
     # await context.bot.send_message(chat_id, "Новый анонс получен:\n" + output_string)
     # Insert the data into the database
+    request_id = generate_id(context.user_data.values())
     query = f"""
-            INSERT INTO players_requests (player_name, contact, game_type, system_name, game_time, price, free_text)
-            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            INSERT INTO players_requests (request_id, player_name, contact, game_type, system_name, game_time, price, free_text)
+            VALUES (%s, %s,%s,%s,%s,%s,%s,%s)
             """
     try:
-        db.execute_query(query, tuple(context.user_data.values()))
+        db.execute_query(query, tuple([request_id] + list(context.user_data.values())))
     except Exception as e:
         print(e)
     # End the conversation

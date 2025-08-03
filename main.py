@@ -86,7 +86,7 @@ conv_handler = ConversationHandler(
 	states={
 		initial_state: [CallbackQueryHandler(handle_role_selection, pattern="^(master|player)$")],
 		master_selection: [
-			CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application)$")], # back_to_role_selection
+			CallbackQueryHandler(get_master_select, pattern="^(master_applications|new_master_application|players_applications)$")], # back_to_role_selection
 
 		# Game Editing Flow
 		game_editing: [CallbackQueryHandler(show_master_application, pattern="^game")],
