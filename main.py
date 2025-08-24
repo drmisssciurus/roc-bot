@@ -128,7 +128,10 @@ conv_handler = ConversationHandler(
 		CommandHandler('cancel', cancel), CallbackQueryHandler(cancel, pattern="^cancel$"),
 		CallbackQueryHandler(start, pattern="^start_again"),
 		CallbackQueryHandler(back_to_search_conversation, pattern="^back_to_search_conversation$"),
-	] #CallbackQueryHandler(go_back_to_role_selection, pattern="^back_to_role_selection$")
+		CommandHandler("start", start)
+	],
+	conversation_timeout=43200
+	#CallbackQueryHandler(go_back_to_role_selection, pattern="^back_to_role_selection$")
 )
 application.add_handler(conv_handler)
 application.add_handler(CommandHandler("help", help_command))

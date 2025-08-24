@@ -1,15 +1,16 @@
-import asyncio
 import logging
 import os
 import re
 import time
+
+import telegram
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
-import hashlib
 
 from database.db_connectior import keys_map, players_keys, db
 from config import CHAT_ID, evgeniya_tiamat_id, igor_krivic_id, dadjezz_id
+from utils import build_keyboard, generate_id
 
 # Включаем логирование
 logging.basicConfig(
@@ -21,18 +22,11 @@ from states import *
 
 load_dotenv()
 
-is_local = bool(os.environ.get('IS_LOCAL'))
+is_local = bool(os.environ.get('IS_LOCAL', False))
 pass
 
-def build_keyboard(button, n_per_row=2):
-    return InlineKeyboardMarkup(
-        [button[i:i + n_per_row] for i in range(0, len(button), n_per_row)]
-    )
 
-def generate_id(data_to_hash: list) -> str:
-    combined = ','.join(data_to_hash)
-    hash_object = hashlib.sha256(combined.encode('utf-8'))
-    return hash_object.hexdigest()
+
 
 async def start(update: Update, context: CallbackContext) -> int:
     print('Start clicked')
@@ -54,8 +48,7 @@ async def start(update: Update, context: CallbackContext) -> int:
     return initial_state
 
 
-# async def back(update: Update, context: CallbackContext) -> int:
-#
+
 
 async def handle_role_selection(update: Update, context: CallbackContext):
     print("first_selection")
@@ -101,13 +94,6 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
     return master_selection
 
 
-""" TODO: New branch
-        1. First of all instead of requesting players count, ask what action is perform.
-        2. if NEw game return players_count state. and go on
-        3. Otherwise return <new_state>. then new conversation flow
-        
-
-"""
 
 async def show_all_players_applications(update: Update, context: CallbackContext):
     print('I am in show_all_players_applications')
@@ -123,6 +109,8 @@ async def show_all_players_applications(update: Update, context: CallbackContext
         FROM players_requests
     """
     result = db.execute_query(query)
+
+
     for entry in result:
         keys = players_keys.copy()
         temp_string = ''
@@ -241,6 +229,8 @@ async def show_master_application(update: Update, context: CallbackContext, game
     keys = keys_map.copy()
     keys.pop('master_id')
     image_url = None
+
+
     temp_string = ''
     for i, key in enumerate(keys):
         if key != 'image_url':
@@ -465,6 +455,7 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
         caption=output_string, photo=context.user_data['image_url']
     )
 
+
     if is_local:
         receivers = [CHAT_ID]
     else:
@@ -472,8 +463,13 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 
     # Send message with summary to main resiever
     for receiver in receivers:
-        await context.bot.send_photo(receiver, photo=context.user_data['image_url'],
-                                 caption="❗️Новый анонс получен❗️\n" + output_string)
+        try:
+            await context.bot.send_photo(receiver, photo=context.user_data['image_url'],
+                                     caption="❗️Новый анонс получен❗️\n" + output_string)
+        except telegram.error.BadRequest as e:
+            print(e)
+            print(str(receiver) + " not found.")
+
 
 
     # Insert the data into the database
@@ -771,31 +767,6 @@ async def back_to_search_conversation(update: Update, context: CallbackContext) 
     return await get_player_selection(update, context)
 
 
-def get_game_announcement() -> list:
-    # Query to get games of the selected type from the database
-    query = """
-            SELECT master_id, game_name, players_count, system_name, setting, game_type, game_time, cost, experience, free_text, image_url FROM games
-            """
-    # Execute a request with the selected game type parameter
-    result = db.execute_query(query)
-    list_player = []
-    # Generating a list of games to display to the user
-    for game in result:
-        temp_string = ''
-        for i, key in enumerate(keys_map):
-
-            if key != 'image_url':
-                if key == 'master_id':
-                    temp_string += keys_map[key] + ': ' + '@' + str(game[i]) + '\n'
-                else:
-                    temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
-            else:
-                image_url = game[i]
-        list_player.append((temp_string, image_url))
-    print(result)
-    # Sending a list of available games to the user
-    # Ending the dialogue
-    return list_player
 
 
 async def get_search_type(update: Update, context: CallbackContext) -> int:
@@ -904,6 +875,8 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
             await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url)
         else:
             await update.effective_message.reply_text(temp_string)
+
+
     await update.effective_message.reply_text("На этом все. Нажми /start если хочешь начать сначала")
     return ConversationHandler.END
 
