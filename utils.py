@@ -1,4 +1,6 @@
 import hashlib
+import datetime
+import traceback
 
 from telegram import InlineKeyboardMarkup
 
@@ -41,3 +43,20 @@ def get_game_announcement() -> list:
     # Sending a list of available games to the user
     # Ending the dialogue
     return list_player
+
+
+
+def write_exception_to_local_file(path='/logs/error.log'):
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tb = traceback.format_exc()  # full traceback as a string
+    log_entry = f"""
+######################################
+\n{now} - Exception occurred:\n{tb}
+######################################
+    """
+    if path:
+        with open(path, "a") as f:
+            f.write(log_entry)
+
+
+
