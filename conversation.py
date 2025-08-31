@@ -10,6 +10,7 @@ from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
 
 from database.db_connectior import keys_map, players_keys, db
 from config import CHAT_ID, evgeniya_tiamat_id, igor_krivic_id, dadjezz_id
+from formatters import format_game_for_view
 from utils import build_keyboard, generate_id
 
 # Включаем логирование
@@ -210,6 +211,7 @@ async def show_master_application(update: Update, context: CallbackContext, game
 
     query = """
                     SELECT
+                        master_id,
                         game_name,
                         players_count,
                         system_name,
@@ -226,17 +228,7 @@ async def show_master_application(update: Update, context: CallbackContext, game
 
     game = db.execute_query(query, (context.user_data["game_to_edit"],))[0]
 
-    keys = keys_map.copy()
-    keys.pop('master_id')
-    image_url = None
-
-
-    temp_string = ''
-    for i, key in enumerate(keys):
-        if key != 'image_url':
-            temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
-        else:
-            image_url = game[i]
+    temp_string, image_url = format_game_for_view(game, keys_map)
 
     time.sleep(1)
     reply_keyboard = [
@@ -318,7 +310,13 @@ async def delete_game(update: Update, context: CallbackContext):
 
 async def get_game_name_from_master(update: Update, context: CallbackContext) -> int:
     print('im in get_game_name')
+    if len(update.effective_message.text) > 20:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
+            parse_mode="Markdown",
+        )
 
+        return master_input_game_name
     context.user_data["game_name"] = update.effective_message.text
     await update.effective_message.reply_text(
         '👨‍👨‍👦‍👦 Ух, звучит серьёзно! Тут нужна целая группа приключенцев… Сколько, как вы считаете? (_Укажите, сколько свободных мест есть на вашу игру_)',
@@ -329,6 +327,13 @@ async def get_game_name_from_master(update: Update, context: CallbackContext) ->
 
 async def get_players_count_from_master(update: Update, context: CallbackContext) -> int:
     print(update.message.text)
+
+    if len(update.effective_message.text) > 3:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 3 символов_)',
+            parse_mode="Markdown",
+        )
+        return master_input_players_count
 
     if not re.match(r'^\s*\d+(-\d+)?$', update.message.text):
         await update.effective_message.reply_text(
@@ -348,6 +353,14 @@ async def get_players_count_from_master(update: Update, context: CallbackContext
 async def get_system_from_master(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
+
+    if len(update.effective_message.text) > 20:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
+            parse_mode="Markdown",
+        )
+        return master_input_system
+
     context.user_data["system_name"] = update.effective_message.text
     await update.effective_message.reply_text(
         '🌐 Так-так, и куда же придётся отправиться нашим доблестным авантюристам? (_Парой слов опишите сеттинг и/или жанр вашей игры_)',
@@ -358,6 +371,14 @@ async def get_system_from_master(update: Update, context: CallbackContext) -> in
 
 async def get_setting_from_master(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
+
+
+    if len(update.effective_message.text) > 20:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
+            parse_mode="Markdown",
+        )
+        return master_input_setting
 
     context.user_data["setting"] = update.effective_message.text
     reply_keyboard = [
@@ -393,6 +414,15 @@ async def get_game_type_from_master(update: Update, context: CallbackContext) ->
 async def get_time_from_master(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
+
+
+    if len(update.effective_message.text) > 32:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 32 символов_)',
+            parse_mode="Markdown",
+        )
+        return master_input_time
+
     context.user_data["game_time"] = update.effective_message.text
     await update.effective_message.reply_text(
         '💰 Осталась пара формальностей. Вы хотите взять с приключенцев страховочный взнос? А то, знаете ли, бывали случаи… (_Укажите желаемую цену за игровую сессию с игрока_)',
@@ -403,6 +433,13 @@ async def get_time_from_master(update: Update, context: CallbackContext) -> int:
 
 async def get_cost_from_master(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
+
+    if len(update.effective_message.text) > 20:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
+            parse_mode="Markdown",
+        )
+        return master_input_cost
 
     context.user_data["cost"] = update.effective_message.text
     await update.effective_message.reply_text(
@@ -416,6 +453,12 @@ async def get_cost_from_master(update: Update, context: CallbackContext) -> int:
 async def get_experience_from_master(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
 
+    if len(update.effective_message.text) > 100:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 100 символов_)',
+            parse_mode = "Markdown",
+        )
+        return master_input_experience
     context.user_data["experience"] = update.effective_message.text
     await update.effective_message.reply_text(
         '🖼️ Последний штрих: пожалуйста, приложите вашу гербовую печать, портрет преступника и карту местности. Приключенцам нужны зацепки, знаете ли! (_Прикрепите к вашей заявке сопроводительное изображение это обязательный пункт_)',
@@ -438,6 +481,14 @@ async def get_image_from_master(update: Update, context: CallbackContext) -> int
 
 async def get_free_text_from_master(update: Update, context: CallbackContext) -> int:
     print(update.effective_message.text)
+
+    if len(update.effective_message.text) > 600:
+        await update.effective_message.reply_text(
+            '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваше описание превышает лимиты Телеграма, сократите до 600 символов_)',
+            parse_mode="Markdown",
+        )
+        return master_input_free_text
+
 
     context.user_data["free_text"] = update.effective_message.text
 
@@ -465,7 +516,7 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
     for receiver in receivers:
         try:
             await context.bot.send_photo(receiver, photo=context.user_data['image_url'],
-                                     caption="❗️Новый анонс получен❗️\n" + output_string)
+                                     caption=output_string)
         except telegram.error.BadRequest as e:
             print(e)
             print(str(receiver) + " not found.")
@@ -736,17 +787,7 @@ async def print_all_games(update: Update, context: CallbackContext) -> int:
             """
     game = db.execute_query(query, (game_id,))[0]
 
-    keys = keys_map.copy()
-    image_url = None
-    temp_string = ''
-    for i, key in enumerate(keys):
-        if key != 'image_url':
-            if key == 'master_id':
-                temp_string += keys_map[key] + ': ' + '@' + str(game[0]) + '\n'
-            else:
-                temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
-        else:
-            image_url = game[i]
+    temp_string, image_url = format_game_for_view(game, keys_map)
 
     reply_keyboard = [
         [
@@ -861,16 +902,7 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
         query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
 
     for game in result:
-        image_url = None
-        temp_string = ''
-        for i, key in enumerate(keys_map):
-            if key != 'image_url':
-                if key == 'master_id':
-                    temp_string += keys_map[key] + ': ' + '@' + str(game[i]) + '\n'
-                else:
-                    temp_string += keys_map[key] + ': ' + str(game[i]) + '\n'
-            else:
-                image_url = game[i]
+        temp_string, image_url = format_game_for_view(game, keys_map)
         if image_url:
             await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url)
         else:
