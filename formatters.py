@@ -25,8 +25,8 @@ def format_game_for_view(game_tuple: tuple, game_keys: list) -> (str, str | None
         value = game_tuple[i]
         if key == 'image_url':
             image_url = value
-        elif key == 'master_id':
-            temp_string += f"{keys_map[key]}: @{str(value)}\n"
+        # elif key == 'master_id':
+        #     temp_string += f"{keys_map[key]}: @{str(value)}\n"
         else:
             temp_string += f"{keys_map[key]}: {str(value)}\n"
     return temp_string, image_url

@@ -41,6 +41,7 @@ from states import *
 from dotenv import load_dotenv
 
 
+
 load_dotenv()
 #dddtest
 async def set_bot_commands(application: Application) -> None:

@@ -63,8 +63,10 @@ async def handle_role_selection(update: Update, context: CallbackContext):
 
 async def start_master_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE, is_first_time=True) -> int:
     context.user_data.clear()
-    master_id = str(update.callback_query.from_user.username)
+    master_id = str(update.callback_query.from_user.name)
     print('masterID:' + master_id)
+
+
     context.user_data["master_id"] = master_id
 
     print('get_master_branch clicked')
@@ -130,7 +132,7 @@ async def get_master_select(update: Update, context: CallbackContext):
     if query.data == 'master_applications':
         query = """
                 SELECT game_name, game_id FROM games
-                WHERE master_id=%s
+                WHERE master_id=%s 
                 """
         # Execute a request with the selected game type parameter
         result = db.execute_query(query, (context.user_data["master_id"],))
@@ -496,10 +498,10 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
     output_string = ''
     for key, value in context.user_data.items():
         if key != 'image_url':
-            if key == 'master_id':
-                output_string += keys_map[key] + ': ' + '@' + str(value) + '\n'
-            else:
-                output_string += keys_map[key] + ": " + value + '\n'
+            # if key == 'master_id':
+            #     output_string += keys_map[key] + ': ' + '@' + str(value) + '\n'
+            # else:
+            output_string += keys_map[key] + ": " + value + '\n'
 
     # Send the summary back to the master
     await update.effective_message.reply_photo(
