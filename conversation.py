@@ -282,6 +282,41 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
             WHERE game_id = %s;
             """
     result = db.execute_query(query, (update.effective_message.text, context.user_data['game_to_edit']))
+    query = """
+                        SELECT
+                            master_id,
+                            game_name,
+                            players_count,
+                            system_name,
+                            setting,
+                            game_type,
+                            game_time,
+                            cost,
+                            experience,
+                            free_text,
+                            image_url 
+                        FROM games
+                        WHERE game_id=%s
+                        """
+
+    game = db.execute_query(query, (context.user_data["game_to_edit"],))[0]
+
+    temp_string, image_url = format_game_for_view(game, keys_map)
+
+    if is_local:
+        receivers = [CHAT_ID]
+    else:
+        receivers = [dadjezz_id, igor_krivic_id, evgeniya_tiamat_id]
+
+    # Send message with summary to main resiever
+    for receiver in receivers:
+        try:
+            await context.bot.send_photo(receiver, photo=image_url,
+                                     caption=temp_string)
+        except telegram.error.BadRequest as e:
+            print(e)
+            print(str(receiver) + " not found.")
+
     print(result)
     return await show_master_application(update, context, context.user_data['game_to_edit'])
 

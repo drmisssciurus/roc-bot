@@ -14,6 +14,9 @@
       <assistant-state connection-id="2ec1c385-b8a4-464a-b8f4-96c7744ade3c" default-profile-name="" selected-profile-name="" selected-model-name="" assistant-type="GENERIC" selected-action="SHOW_SQL" availability="UNAVAILABLE" acknowledgement="NONE">
         <messages />
       </assistant-state>
+      <assistant-state connection-id="4b4ee18c-49f6-4a4f-bfff-af776fe7b2b9" default-profile-name="" selected-profile-name="" selected-model-name="" assistant-type="GENERIC" selected-action="SHOW_SQL" availability="UNAVAILABLE" acknowledgement="NONE">
+        <messages />
+      </assistant-state>
     </assistants>
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
@@ -34,7 +37,10 @@
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files />
+    <open-files>
+      <object connection-id="4b4ee18c-49f6-4a4f-bfff-af776fe7b2b9" object-ref="consoles/remote-mysql" />
+      <object connection-id="2ec1c385-b8a4-464a-b8f4-96c7744ade3c" object-ref="consoles/Connection" />
+    </open-files>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="2ec1c385-b8a4-464a-b8f4-96c7744ade3c" />
@@ -170,7 +176,7 @@
           <token-type value="" />
           <token-config-file value="" />
           <token-profile value="" />
-          <session-user value="local_machine@147.235.196.109" />
+          <session-user value="local_machine@bzq-79-177-132-138.red.bezeqint.net" />
         </database>
         <properties>
           <auto-commit value="false" />
