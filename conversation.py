@@ -512,8 +512,8 @@ async def get_image_from_master(update: Update, context: CallbackContext) -> int
     file = await context.bot.get_file(image.file_id)
 
 
-    await file.download_to_drive(f'./temp/{image.file_id}.jpg')
-    context.user_data["image_url"] = f'./temp/{image.file_id}.jpg'
+    await file.download_to_drive(f'temp/{image.file_id}.jpg')
+    context.user_data["image_url"] = f'temp/{image.file_id}.jpg'
 
     await update.effective_message.reply_text(
         '📜 Формуляр заполнен! Я подготовлю почтовых ястребов – а вы можете написать письмо для вашей будущей группы героев. (_Оставьте описание вашей игры, пожелания к игрокам и иное, что считаете нужным_)',
