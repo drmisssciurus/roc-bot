@@ -1,8 +1,12 @@
 import hashlib
 import datetime
+import os
 import traceback
 
 from telegram import InlineKeyboardMarkup
+from google.cloud import storage
+
+
 
 
 def build_keyboard(button, n_per_row=2):
@@ -60,3 +64,34 @@ def write_exception_to_local_file(path='/logs/error.log'):
 
 
 
+def upload_image_to_bucket(path):
+    bucket_name = 'roc_images'
+    project_id = 'articulate-bird-464515-n5'
+    client = storage.Client(project=project_id)
+
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(path)
+    blob.upload_from_filename(path)
+
+    os.remove(path)
+
+
+def load_from_bucket(blob_name):
+    bucket_name = 'roc_images'
+    project_id = 'articulate-bird-464515-n5'
+    client = storage.Client(project=project_id)
+
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.download_to_filename(blob_name)
+    return blob_name
+
+
+def delete_from_bucket(blob_name):
+    bucket_name = 'roc_images'
+    project_id = 'articulate-bird-464515-n5'
+    client = storage.Client(project=project_id)
+
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.delete()

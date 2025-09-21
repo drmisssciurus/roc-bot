@@ -11,7 +11,7 @@ from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
 from database.db_connectior import keys_map, players_keys, db
 from config import CHAT_ID, evgeniya_tiamat_id, igor_krivic_id, dadjezz_id
 from formatters import format_game_for_view
-from utils import build_keyboard, generate_id
+from utils import build_keyboard, generate_id, upload_image_to_bucket, load_from_bucket, delete_from_bucket
 
 # Включаем логирование
 logging.basicConfig(
@@ -231,7 +231,7 @@ async def show_master_application(update: Update, context: CallbackContext, game
     game = db.execute_query(query, (context.user_data["game_to_edit"],))[0]
 
     temp_string, image_url = format_game_for_view(game, keys_map)
-
+    image_url = load_from_bucket(image_url)
     time.sleep(1)
     reply_keyboard = [
         [
@@ -253,6 +253,7 @@ async def show_master_application(update: Update, context: CallbackContext, game
 
         await update.effective_message.reply_text(temp_string, reply_markup=reply_markup)
 
+    os.remove(image_url)
     return editing_iteration_start
 
 
@@ -302,7 +303,7 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
     game = db.execute_query(query, (context.user_data["game_to_edit"],))[0]
 
     temp_string, image_url = format_game_for_view(game, keys_map)
-
+    image_url = load_from_bucket(image_url)
     if is_local:
         receivers = [CHAT_ID]
     else:
@@ -318,6 +319,7 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
             print(str(receiver) + " not found.")
 
     print(result)
+    os.remove(image_url)
     return await show_master_application(update, context, context.user_data['game_to_edit'])
 
 
@@ -333,12 +335,13 @@ async def delete_game(update: Update, context: CallbackContext):
         select image_url from games where game_id = %s
     """
     result = db.execute_query(query, (context.user_data["game_to_edit"],))
-    os.remove(result[0][0])
+    delete_from_bucket(result[0][0])
     query = f"""
             DELETE FROM games
             WHERE game_id = %s;
             """
     result = db.execute_query(query, (context.user_data["game_to_edit"],))
+
     await update.effective_message.delete()
     # await update.callback_query.edit_message_text('Ваша заявка удалена :(')
     await update.effective_message.reply_text('Ваша заявка удалена :(')
@@ -507,8 +510,11 @@ async def get_experience_from_master(update: Update, context: CallbackContext) -
 async def get_image_from_master(update: Update, context: CallbackContext) -> int:
     image = update.effective_message.photo[-1]
     file = await context.bot.get_file(image.file_id)
-    await file.download_to_drive(f'./images/{image.file_id}.jpg')
-    context.user_data["image_url"] = f'./images/{image.file_id}.jpg'
+
+
+    await file.download_to_drive(f'./temp/{image.file_id}.jpg')
+    context.user_data["image_url"] = f'./temp/{image.file_id}.jpg'
+
     await update.effective_message.reply_text(
         '📜 Формуляр заполнен! Я подготовлю почтовых ястребов – а вы можете написать письмо для вашей будущей группы героев. (_Оставьте описание вашей игры, пожелания к игрокам и иное, что считаете нужным_)',
         parse_mode="Markdown",
@@ -574,7 +580,7 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
         parse_mode="Markdown"
 
     )
-
+    upload_image_to_bucket(context.user_data['image_url'])
     return ConversationHandler.END
 
 
@@ -825,7 +831,7 @@ async def print_all_games(update: Update, context: CallbackContext) -> int:
     game = db.execute_query(query, (game_id,))[0]
 
     temp_string, image_url = format_game_for_view(game, keys_map)
-
+    image_url = load_from_bucket(image_url)
     reply_keyboard = [
         [
             InlineKeyboardButton("Назад",
@@ -837,6 +843,7 @@ async def print_all_games(update: Update, context: CallbackContext) -> int:
     await update.effective_message.delete()
     await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url, reply_markup=reply_markup)
 
+    os.remove(image_url)
     return player_search
 
 async def back_to_search_conversation(update: Update, context: CallbackContext) -> int:
@@ -940,11 +947,13 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
 
     for game in result:
         temp_string, image_url = format_game_for_view(game, keys_map)
+        image_url = load_from_bucket(image_url)
         if image_url:
             await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url)
         else:
             await update.effective_message.reply_text(temp_string)
 
+        os.remove(image_url)
 
     await update.effective_message.reply_text("На этом все. Нажми /start если хочешь начать сначала")
     return ConversationHandler.END
