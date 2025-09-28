@@ -50,7 +50,7 @@ def get_game_announcement() -> list:
 
 
 
-def write_exception_to_local_file(path='/logs/error.log'):
+def write_exception_to_local_file(path='logs/error.log'):
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     tb = traceback.format_exc()  # full traceback as a string
     log_entry = f"""
