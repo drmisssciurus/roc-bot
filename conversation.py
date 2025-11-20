@@ -217,6 +217,7 @@ async def get_master_select(update: Update, context: CallbackContext):
                     FROM players_requests \
                     """
             result = db.execute_query(query)
+
             for entry in result:
                 keys = players_keys.copy()
                 temp_string = ''
@@ -231,7 +232,12 @@ async def get_master_select(update: Update, context: CallbackContext):
             ]
         ]
         reply_markup = InlineKeyboardMarkup(reply_keyboard)
-        await update.effective_message.reply_text(text='На этом Все',
+
+        if result:
+            message = 'На этом Все'
+        else:
+            message = 'Заявок нет'
+        await update.effective_message.reply_text(text=message,
                                                   reply_markup=reply_markup)
 
         return initial_state
