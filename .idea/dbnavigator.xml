@@ -27,10 +27,11 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="2ec1c385-b8a4-464a-b8f4-96c7744ade3c">
-      <console name="Connection" type="STANDARD" schema="" session="Main"><![CDATA[select * from games where master_id = 'DrMisssciurus';]]></console>
+      <console name="Connection" type="STANDARD" schema="main" session="Main"><![CDATA[select * from games;]]></console>
     </connection>
     <connection id="4b4ee18c-49f6-4a4f-bfff-af776fe7b2b9">
-      <console name="remote-mysql" type="STANDARD" schema="bot" session="Main" />
+      <console name="remote-mysql" type="STANDARD" schema="bot" session="Main"><![CDATA[UPDATE games SET master_id = concat('@', master_id) WHERE master_id NOT LIKE '@%' AND master_id != 'Борис (0527244496 - писать в ватсап)';
+select * from games;]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseEditorStateManager">
@@ -48,6 +49,11 @@
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
     <filter-actions connection-id="2ec1c385-b8a4-464a-b8f4-96c7744ade3c" dataset="main.games" active-filter-id="" />
+    <filter-actions connection-id="4b4ee18c-49f6-4a4f-bfff-af776fe7b2b9" dataset="bot.games" active-filter-id="890216bb-78fd-4495-9fff-7998dd2e7839">
+      <filter id="890216bb-78fd-4495-9fff-7998dd2e7839" name="Filter" temporary="false" custom-name="false" type="basic" join-type="AND">
+        <condition column="game_id" operator="=" value="" active="true" />
+      </filter>
+    </filter-actions>
   </component>
   <component name="DBNavigator.Project.ExecutionManager">
     <retain-sticky-names value="false" />
