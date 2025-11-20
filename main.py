@@ -134,16 +134,16 @@ conv_handler = ConversationHandler(
 		player_free_text_input: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_free_text_from_player)],
 
 		player_search: [
-			CallbackQueryHandler(get_player_selection, pattern="^(Покажи мне все игры|Я хочу выбрать по фильтру|back_to_search_conversation)$")],
+			CallbackQueryHandler(get_player_selection, pattern="^(Покажи мне все игры|Я хочу выбрать по фильтру)$")],
 		search_print_all_games: [CallbackQueryHandler(print_all_games, pattern="^game-.*")],
-		search_type_input: [CallbackQueryHandler(get_search_type, pattern="^(Ваншот|Кампания|Модуль)$")],
+		search_type_input: [CallbackQueryHandler(get_search_type, pattern="^(Ваншот|Кампания|Модуль|)$")],
 		search_system_input: [CallbackQueryHandler(get_search_system, pattern="^system-.*")],
 		search_price_input: [CallbackQueryHandler(get_search_price, pattern="^cost-.*")],
 	},
 	fallbacks=[
 		CommandHandler('cancel', cancel), CallbackQueryHandler(cancel, pattern="^cancel$"),
 		CallbackQueryHandler(start, pattern="^start_again"),
-		CallbackQueryHandler(back_to_search_conversation, pattern="^back_to_search_conversation$"),
+		CallbackQueryHandler(back_to_search_conversation, pattern="^(back_to_search_conversation|back_to_filters)$"),
 		CommandHandler("start", start)
 	],
 	conversation_timeout=43200

@@ -103,7 +103,7 @@ async def start_master_conversation(update: Update, context: ContextTypes.DEFAUL
                 InlineKeyboardButton("Заявки от игроков", callback_data="players_applications"),
             ],
             [
-                InlineKeyboardButton("Назад", callback_data="start_again"),
+                InlineKeyboardButton("← Назад", callback_data="start_again"),
             ]
         ]
         reply_markup = InlineKeyboardMarkup(reply_keyboard)
@@ -227,7 +227,7 @@ async def get_master_select(update: Update, context: CallbackContext):
 
         reply_keyboard = [
             [
-                InlineKeyboardButton("Назад", callback_data="start_again"),
+                InlineKeyboardButton("← Назад", callback_data="start_again"),
             ]
         ]
         reply_markup = InlineKeyboardMarkup(reply_keyboard)
@@ -281,7 +281,7 @@ async def show_master_application(update: Update, context: CallbackContext, game
                                      callback_data="edit_game"),
                 InlineKeyboardButton("Удалить заявку",
                                      callback_data="delete_game"),
-                InlineKeyboardButton("Выйти",
+                InlineKeyboardButton("← Выйти",
                                      callback_data="cancel_edit_game"),
             ]
         ]
@@ -290,7 +290,12 @@ async def show_master_application(update: Update, context: CallbackContext, game
         await update.effective_message.delete()
         if image_url:
 
-            await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url, reply_markup=reply_markup)
+            msg = await update.effective_message.reply_photo(photo=image_url)
+
+            context.user_data["image_id"] = msg.message_id
+            context.user_data["chat_id"] = update.effective_message.chat_id
+
+            await update.effective_message.reply_text(str(temp_string), reply_markup=reply_markup)
         else:
 
             await update.effective_message.reply_text(temp_string, reply_markup=reply_markup)
@@ -376,6 +381,7 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
             try:
                 await context.bot.send_photo(receiver, photo=image_url,
                                          caption=temp_string)
+                await context.bot.send_message(receiver, temp_string)
             except telegram.error.BadRequest as e:
                 print(e)
                 print(str(receiver) + " not found.")
@@ -419,6 +425,13 @@ async def delete_game(update: Update, context: CallbackContext):
                 """
         result = db.execute_query(query, (context.user_data["game_to_edit"],))
 
+        if 'image_id' in context.user_data:
+            image_id = context.user_data["image_id"]
+            chat_id = context.user_data["chat_id"]
+            await context.bot.delete_message(chat_id=chat_id, message_id=image_id)
+            del context.user_data["image_id"]
+            del context.user_data["chat_id"]
+
         await update.effective_message.delete()
         # await update.callback_query.edit_message_text('Ваша заявка удалена :(')
         await update.effective_message.reply_text('Ваша заявка удалена :(')
@@ -435,7 +448,7 @@ async def delete_game(update: Update, context: CallbackContext):
 async def get_game_name_from_master(update: Update, context: CallbackContext) -> int:
     try:
         print('im in get_game_name')
-        if len(update.effective_message.text) > 20:
+        if len(update.effective_message.text) > 100:
             await update.effective_message.reply_text(
                 '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
                 parse_mode="Markdown",
@@ -460,7 +473,7 @@ async def get_players_count_from_master(update: Update, context: CallbackContext
     try:
         print(update.message.text)
 
-        if len(update.effective_message.text) > 3:
+        if len(update.effective_message.text) > 10:
             await update.effective_message.reply_text(
                 '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 3 символов_)',
                 parse_mode="Markdown",
@@ -494,7 +507,7 @@ async def get_system_from_master(update: Update, context: CallbackContext) -> in
         print(update.effective_message.text)
 
 
-        if len(update.effective_message.text) > 20:
+        if len(update.effective_message.text) > 100:
             await update.effective_message.reply_text(
                 '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
                 parse_mode="Markdown",
@@ -520,7 +533,7 @@ async def get_setting_from_master(update: Update, context: CallbackContext) -> i
         print(update.effective_message.text)
 
 
-        if len(update.effective_message.text) > 20:
+        if len(update.effective_message.text) > 100:
             await update.effective_message.reply_text(
                 '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
                 parse_mode="Markdown",
@@ -577,7 +590,7 @@ async def get_time_from_master(update: Update, context: CallbackContext) -> int:
 
 
 
-        if len(update.effective_message.text) > 32:
+        if len(update.effective_message.text) > 50:
             await update.effective_message.reply_text(
                 '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 32 символов_)',
                 parse_mode="Markdown",
@@ -602,7 +615,7 @@ async def get_cost_from_master(update: Update, context: CallbackContext) -> int:
     try:
         print(update.effective_message.text)
 
-        if len(update.effective_message.text) > 20:
+        if len(update.effective_message.text) > 50:
             await update.effective_message.reply_text(
                 '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваш текст слишком длинный, сократите до 20 символов_)',
                 parse_mode="Markdown",
@@ -676,7 +689,7 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
     try:
         print(update.effective_message.text)
 
-        if len(update.effective_message.text) > 600:
+        if len(update.effective_message.text) > 3500:
             await update.effective_message.reply_text(
                 '🪶 Эй-эй, ястреб столько не унесёт, знаете ли! Покороче, пожалуйста. (_Ваше описание превышает лимиты Телеграма, сократите до 600 символов_)',
                 parse_mode="Markdown",
@@ -697,9 +710,11 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
 
         # Send the summary back to the master
         await update.effective_message.reply_photo(
-            caption=output_string, photo=context.user_data['image_url']
+            photo=context.user_data['image_url']
         )
-
+        await update.effective_message.reply_text(
+            text=output_string
+        )
 
         if is_local:
             receivers = [CHAT_ID]
@@ -709,8 +724,8 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
         # Send message with summary to main resiever
         for receiver in receivers:
             try:
-                await context.bot.send_photo(receiver, photo=context.user_data['image_url'],
-                                         caption=output_string)
+                await context.bot.send_photo(receiver, photo=context.user_data['image_url'])
+                await context.bot.send_message(receiver, output_string)
             except telegram.error.BadRequest as e:
                 print(e)
                 print(str(receiver) + " not found.")
@@ -752,7 +767,7 @@ async def start_player_conversation(update: Update, context: CallbackContext):
                 InlineKeyboardButton("Заявка", callback_data="application"),
             ],
             [
-                InlineKeyboardButton("Назад", callback_data="start_again"),
+                InlineKeyboardButton("← Назад", callback_data="start_again"),
             ]
         ]
         reply_markup = InlineKeyboardMarkup(reply_keyboard)
@@ -944,7 +959,8 @@ async def get_free_text_from_player(update: Update, context: CallbackContext) ->
 
         context.user_data["free_text"] = update.effective_message.text
         await update.effective_message.reply_text(
-            '🤝 Формуляр заполнен! Спасибо за обращение в Гильдию Авантюристов RoC! Теперь мы будем искать для вас подходящее приключение…',
+            '🤝 Формуляр заполнен! Спасибо за обращение в Гильдию Авантюристов RoC! Теперь мы будем искать для вас подходящее приключение… (_Нажми /start если хочешь начать сначала._)',
+            parse_mode="Markdown"
         )
         # Prepare a summary of the collected data
         output_string = ''
@@ -989,7 +1005,7 @@ async def start_player_search(update: Update, context: CallbackContext) -> int:
                                      callback_data='Я хочу выбрать по фильтру'),
             ],
             [
-                InlineKeyboardButton('Назад', callback_data='start_again')
+                InlineKeyboardButton('← Назад', callback_data='start_again')
             ]
         ]
         reply_markup = InlineKeyboardMarkup(question_keyboard)
@@ -1018,15 +1034,25 @@ async def get_player_selection(update: Update, context: CallbackContext) -> int:
             buttons = [
                 [InlineKeyboardButton(game[0], callback_data='game-' + str(game[1]))] for game in result
             ]
-            buttons.append([InlineKeyboardButton('Выйти', callback_data='start_again')])
+            buttons.append([InlineKeyboardButton('← Выйти', callback_data='start_again')])
             reply_markup = InlineKeyboardMarkup(buttons)
+
             await update.effective_message.delete()
+
+            if 'image_id' in context.user_data:
+                image_id = context.user_data["image_id"]
+                chat_id = context.user_data["chat_id"]
+                await context.bot.delete_message(chat_id=chat_id, message_id=image_id)
+                del context.user_data["image_id"]
+                del context.user_data["chat_id"]
+
+
             await update.effective_message.reply_text(
                 "👓 Вот то что есть на данный момент! Что хотите посмотреть сначала?",
                 reply_markup=reply_markup,
             )
             return search_print_all_games
-        else:
+        elif query.data in ['back_to_filters', 'Я хочу выбрать по фильтру']:
             question_keyboard = [
                 [
                     InlineKeyboardButton('Ваншот', callback_data='Ваншот'),
@@ -1073,14 +1099,20 @@ async def print_all_games(update: Update, context: CallbackContext) -> int:
         image_url = load_from_bucket(image_url)
         reply_keyboard = [
             [
-                InlineKeyboardButton("Назад",
+                InlineKeyboardButton("← Назад",
                                      callback_data="back_to_search_conversation"),
             ]
         ]
         reply_markup = InlineKeyboardMarkup(reply_keyboard)
 
         await update.effective_message.delete()
-        await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url, reply_markup=reply_markup)
+        msg = await update.effective_message.reply_photo(photo=image_url)
+
+        context.user_data["image_id"] = msg.message_id
+        context.user_data["chat_id"] = update.effective_message.chat_id
+
+
+        await update.effective_message.reply_text(str(temp_string), reply_markup=reply_markup)
 
         os.remove(image_url)
         return player_search
@@ -1094,7 +1126,7 @@ async def print_all_games(update: Update, context: CallbackContext) -> int:
 async def back_to_search_conversation(update: Update, context: CallbackContext) -> int:
     try:
         print("back_to_search_conversation()")
-        update.callback_query.data = 'Покажи мне все игры'
+
         return await get_player_selection(update, context)
     except (Exception) as e:
         write_exception_to_local_file()
@@ -1130,15 +1162,30 @@ async def get_search_type(update: Update, context: CallbackContext) -> int:
             return search_type_input
 
 
-        buttons = []
+        # buttons = []
 
-        for system in result:
-            button = InlineKeyboardButton(
-                system[0], callback_data='system-' + system[0])
-            buttons.append(button)
+        """
+            buttons = [
+                [InlineKeyboardButton(game[0], callback_data='game-' + str(game[1]))] for game in result
+            ]
+            
+            buttons.append([InlineKeyboardButton('Выйти', callback_data='start_again')])
+            reply_markup = InlineKeyboardMarkup(buttons)
+        
+        """
+
+        buttons = [
+            [InlineKeyboardButton(system[0], callback_data='system-' + str(system[0]))] for system in result
+        ]
+
+        # for system in result:
+        #     button = InlineKeyboardButton(
+        #         system[0], callback_data='system-' + system[0])
+        #
+        #     buttons.append(button)
 
         print(buttons)
-        reply_markup = InlineKeyboardMarkup([buttons])
+        reply_markup = InlineKeyboardMarkup(buttons)
         await update.effective_message.reply_text(
             "🧑‍⚖️ Везде свои законы, знаете ли. Но авантюристы – особый народ: они вольны сами выбирать, какой системе правил следовать! А какую выбираете вы?",
             reply_markup=reply_markup,
@@ -1210,18 +1257,25 @@ async def get_search_price(update: Update, context: CallbackContext) -> int:
         result = db.execute_query(
             query, (context.user_data["game_type"], context.user_data["game_system"], player_choise_price))
 
+        button =  [
+                InlineKeyboardButton("← Назад", callback_data="back_to_filters"),
+            ]
+
+        reply_markup = InlineKeyboardMarkup([button])
         for game in result:
             temp_string, image_url = format_game_for_view(game, keys_map)
             image_url = load_from_bucket(image_url)
             if image_url:
-                await update.effective_message.reply_photo(caption=str(temp_string), photo=image_url)
+                await update.effective_message.reply_photo(photo=image_url)
+                await update.effective_message.reply_text(str(temp_string), reply_markup=reply_markup)
+
             else:
                 await update.effective_message.reply_text(temp_string)
 
             os.remove(image_url)
 
-        await update.effective_message.reply_text("На этом все. Нажми /start если хочешь начать сначала")
-        return ConversationHandler.END
+        # await update.effective_message.reply_text("На этом все. Нажми /start если хочешь начать сначала")
+        # return ConversationHandler.END
     except (Exception) as e:
         write_exception_to_local_file()
         await update.effective_message.reply_text(
