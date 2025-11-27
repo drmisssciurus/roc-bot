@@ -350,12 +350,24 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
     try:
         print('I am in master_new_data')
         # TODO check input for all options
+
+        if context.user_data['value_to_edit'] == 'image_url':
+            image = update.effective_message.photo[-1]
+            file = await context.bot.get_file(image.file_id)
+
+            await file.download_to_drive(f'temp/{image.file_id}.jpg')
+            new_value = f'temp/{image.file_id}.jpg'
+            upload_image_to_bucket(new_value)
+
+        else:
+            new_value = update.effective_message.text
+
         query = f"""
                 UPDATE games
                 SET {context.user_data['value_to_edit']} = %s
                 WHERE game_id = %s;
                 """
-        result = db.execute_query(query, (update.effective_message.text, context.user_data['game_to_edit']))
+        result = db.execute_query(query, (new_value, context.user_data['game_to_edit']))
         query = """
                             SELECT
                                 master_id,

@@ -108,7 +108,7 @@ conv_handler = ConversationHandler(
 		game_editing: [CallbackQueryHandler(show_master_application, pattern="^game")],
 		editing_iteration_start: [CallbackQueryHandler(show_master_editing_options, pattern="^edit_game$"), CallbackQueryHandler(exit_editing_loop, pattern="^cancel_edit_game$"), CallbackQueryHandler(delete_game, pattern="^delete_game$")],
 		editing_iteration_input: [CallbackQueryHandler(handle_master_editing_option, pattern="^(master_id|game_name|players_count|system_name|setting|game_type|game_time|cost|experience|image_url|free_text|)$")],
-		editing_iteration_finish: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_new_value_from_master)],
+		editing_iteration_finish: [MessageHandler((filters.TEXT & ~filters.COMMAND) | filters.PHOTO, get_new_value_from_master)],
 
 		# New Application Flow
 		master_input_game_name: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_game_name_from_master)],

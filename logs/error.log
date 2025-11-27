@@ -361,3 +361,23 @@ telegram.error.BadRequest: Chat not found
 
 ######################################
     
+######################################
+
+2025-11-27 18:03:03 - Exception occurred:
+Traceback (most recent call last):
+  File "D:\Projects\roc-bot\conversation.py", line 361, in get_new_value_from_master
+    os.remove(new_value)
+FileNotFoundError: [WinError 2] The system cannot find the file specified: 'temp/AgACAgQAAxkBAAIMV2kocl6sfHBIK_8gw4FVwr_kPrhBAALFC2sbAb9BUd55dFCWXJ5wAQADAgADeQADNgQ.jpg'
+
+######################################
+    
+######################################
+
+2025-11-27 18:05:49 - Exception occurred:
+Traceback (most recent call last):
+  File "D:\Projects\roc-bot\conversation.py", line 361, in get_new_value_from_master
+    os.remove(new_value)
+FileNotFoundError: [WinError 2] The system cannot find the file specified: 'temp/AgACAgQAAxkBAAIMV2kocl6sfHBIK_8gw4FVwr_kPrhBAALFC2sbAb9BUd55dFCWXJ5wAQADAgADeQADNgQ.jpg'
+
+######################################
+    
