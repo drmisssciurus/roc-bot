@@ -43,7 +43,7 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
-#dddtest
+#dddtest1111
 async def set_bot_commands(application: Application) -> None:
 	"""Устанавливаем постоянные команды."""
 	commands = [
