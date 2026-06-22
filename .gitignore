@@ -8,3 +8,4 @@ nikita
 config.py
 .idea
 logs/error.log
+*.sql

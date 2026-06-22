@@ -9,7 +9,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ConversationHandler, CallbackContext, ContextTypes
 
 from database.db_connectior import keys_map, players_keys, db
-from config import CHAT_ID, evgeniya_tiamat_id, igor_krivic_id, dadjezz_id
+from config import CHAT_ID, evgeniya_tiamat_id, dadjezz_id
 from formatters import format_game_for_view
 from utils import build_keyboard, generate_id, upload_image_to_bucket, load_from_bucket, delete_from_bucket, \
     write_exception_to_local_file
@@ -25,7 +25,11 @@ from states import *
 load_dotenv()
 
 is_local = bool(os.environ.get('IS_LOCAL', False))
-pass
+
+ALLOWED_EDIT_COLUMNS = {
+    'game_name', 'players_count', 'system_name', 'setting',
+    'game_type', 'game_time', 'cost', 'experience', 'image_url', 'free_text'
+}
 
 
 
@@ -349,9 +353,13 @@ async def handle_master_editing_option(update: Update, context: CallbackContext)
 async def get_new_value_from_master(update: Update, context: CallbackContext):
     try:
         print('I am in master_new_data')
-        # TODO check input for all options
 
-        if context.user_data['value_to_edit'] == 'image_url':
+        col = context.user_data['value_to_edit']
+        if col not in ALLOWED_EDIT_COLUMNS:
+            await update.effective_message.reply_text('Неверное поле для редактирования.')
+            return editing_iteration_input
+
+        if col == 'image_url':
             image = update.effective_message.photo[-1]
             file = await context.bot.get_file(image.file_id)
 
@@ -364,7 +372,7 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
 
         query = f"""
                 UPDATE games
-                SET {context.user_data['value_to_edit']} = %s
+                SET {col} = %s
                 WHERE game_id = %s;
                 """
         result = db.execute_query(query, (new_value, context.user_data['game_to_edit']))
@@ -392,7 +400,7 @@ async def get_new_value_from_master(update: Update, context: CallbackContext):
         if is_local:
             receivers = [CHAT_ID]
         else:
-            receivers = [dadjezz_id, igor_krivic_id, evgeniya_tiamat_id]
+            receivers = [dadjezz_id, evgeniya_tiamat_id]
 
         # Send message with summary to main resiever
         for receiver in receivers:
@@ -737,7 +745,7 @@ async def get_free_text_from_master(update: Update, context: CallbackContext) ->
         if is_local:
             receivers = [CHAT_ID]
         else:
-            receivers = [dadjezz_id, igor_krivic_id, evgeniya_tiamat_id]
+            receivers = [dadjezz_id, evgeniya_tiamat_id]
 
         # Send message with summary to main resiever
         for receiver in receivers:
