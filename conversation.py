@@ -1200,8 +1200,10 @@ async def get_search_type(update: Update, context: CallbackContext) -> int:
         
         """
 
+        # callback_data is limited to 64 bytes, so pass an index instead of the name
+        context.user_data["search_systems"] = [system[0] for system in result]
         buttons = [
-            [InlineKeyboardButton(system[0], callback_data='system-' + str(system[0]))] for system in result
+            [InlineKeyboardButton(system[0], callback_data='system-' + str(i))] for i, system in enumerate(result)
         ]
 
         # for system in result:
@@ -1227,8 +1229,8 @@ async def get_search_type(update: Update, context: CallbackContext) -> int:
 async def get_search_system(update: Update, context: CallbackContext) -> int:
     try:
         # print(update.effective_message.text)
-        context.user_data["game_system"] = player_choise_system = update.callback_query.data[len(
-            "system-"):]
+        system_index = int(update.callback_query.data[len("system-"):])
+        context.user_data["game_system"] = player_choise_system = context.user_data["search_systems"][system_index]
 
         query = """
                 SELECT DISTINCT cost FROM games WHERE game_type=%s AND system_name=%s ORDER BY cost ASC;
@@ -1237,11 +1239,13 @@ async def get_search_system(update: Update, context: CallbackContext) -> int:
             query, (context.user_data["game_type"], player_choise_system))
         print(result)
 
+        # callback_data is limited to 64 bytes, so pass an index instead of the cost text
+        context.user_data["search_costs"] = [cost[0] for cost in result]
         buttons = []
 
-        for cost in result:
+        for i, cost in enumerate(result):
             button = InlineKeyboardButton(
-                cost[0], callback_data='cost-' + str(cost[0]))
+                cost[0], callback_data='cost-' + str(i))
             buttons.append(button)
 
         print(buttons)
@@ -1263,7 +1267,8 @@ async def get_search_system(update: Update, context: CallbackContext) -> int:
 async def get_search_price(update: Update, context: CallbackContext) -> int:
     try:
         # print("get_search_price: " + update.effective_message.text)
-        player_choise_price = update.callback_query.data[len("cost-"):]
+        cost_index = int(update.callback_query.data[len("cost-"):])
+        player_choise_price = context.user_data["search_costs"][cost_index]
         query = """
                 SELECT 
                         master_id,
